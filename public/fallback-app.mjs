@@ -6,6 +6,7 @@ import { demoManifest } from './core/demoManifest.js'
 import { nasaSaturnVAssemblyManifest, nasaSaturnVAssemblySemanticManifest } from './core/assemblyManifest.js'
 import { createTimelineController } from './timeline-controller.mjs'
 import { createSectionController } from './section-controller.mjs'
+import { entityDescription, entityLabel, onLanguageChange, t } from './i18n.mjs'
 
 const canvas = document.querySelector('#viewport')
 const ctx = canvas.getContext('2d')
@@ -155,13 +156,13 @@ function renderTree() {
     toggleTarget.className='tree-toggle-target'
     const check=document.createElement('input')
     check.type='checkbox'; check.checked=!state.hiddenIds.has(part.id)
-    check.setAttribute('aria-label',`Hiện ${part.label}`)
+    check.setAttribute('aria-label', t('tree.showPart', { label: entityLabel(part.id, part.label) }))
     check.addEventListener('change',()=>{state=toggleHidden(state,part.id);render()})
     toggleTarget.append(check)
     const btn=document.createElement('button')
     btn.type='button';btn.className='tree-select'
     const label=document.createElement('strong')
-    label.textContent=part.label
+    label.textContent=entityLabel(part.id, part.label)
     const meta=document.createElement('span')
     meta.textContent=part.geometry.kind
     btn.append(label,meta)
@@ -170,19 +171,19 @@ function renderTree() {
   }
 }
 
-const modeLabel = mode => ({ normal: 'Bình thường', ghost: 'Bóng mờ', xray: 'X-quang' }[mode] ?? mode)
+const modeLabel = mode => ({ normal: t('viewer.mode.normal'), ghost: t('viewer.mode.ghost'), xray: t('viewer.mode.xray') }[mode] ?? mode)
 
 function renderInspector(){
   const part=demoManifest.parts.find(p=>p.id===state.selectedId) || null
   const view=part?partViewState(part,state):null
-  inspectorTitle.textContent=part?.label || 'Chưa chọn'
-  inspectorDescription.textContent=part?.description || 'Chọn một nhóm trực quan trên mô hình hoặc trong cây cấu trúc.'
-  visibilityValue.textContent=view ? (view.visible?'Đang hiện':'Đang ẩn') : '—'
+  inspectorTitle.textContent=part ? entityLabel(part.id, part.label) : t('inspector.noneTitle')
+  inspectorDescription.textContent=part ? entityDescription(part.id, part.description) : t('inspector.noneDescription')
+  visibilityValue.textContent=view ? t(view.visible ? 'inspector.visible' : 'inspector.hidden') : '—'
   modeValue.textContent=modeLabel(state.mode)
   explodeValue.textContent=`${Math.round(state.explode*100)}%`
   isolateBtn.disabled=!part;hideBtn.disabled=!part
-  isolateBtn.textContent=part && state.isolatedId===part.id?'Thoát cô lập':'Cô lập'
-  hideBtn.textContent=part && state.hiddenIds.has(part.id)?'Hiện':'Ẩn'
+  isolateBtn.textContent=t(part && state.isolatedId===part.id ? 'inspector.exitIsolate' : 'inspector.isolate')
+  hideBtn.textContent=t(part && state.hiddenIds.has(part.id) ? 'inspector.show' : 'inspector.hide')
   modeChip.textContent=modeValue.textContent
   modeButtons.forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===state.mode)))
 }
@@ -205,11 +206,20 @@ canvas.addEventListener('keydown',e=>{if(e.key==='1'){state=setMode(state,'norma
 new ResizeObserver(resize).observe(canvas)
 if (rawInventory) {
   const note = document.createElement('p')
-  note.textContent = 'Danh sách đối tượng gốc NASA chỉ khả dụng khi trình kết xuất GLB thật được tải.'
+  note.textContent = t('raw.fallbackOnly')
   rawInventory.replaceChildren(note)
 }
+const unsubscribeLanguage = onLanguageChange(() => {
+  if (rawInventory) {
+    const note = document.createElement('p')
+    note.textContent = t('raw.fallbackOnly')
+    rawInventory.replaceChildren(note)
+  }
+  render()
+})
+
 render()
 
 canvas.addEventListener('pointercancel',()=>{dragging=false;lastPointer=null;pointerStart=null})
 
-window.addEventListener('pagehide', () => { timelineController.destroy(); sectionController.destroy() }, { once: true })
+window.addEventListener('pagehide', () => { timelineController.destroy(); sectionController.destroy(); unsubscribeLanguage() }, { once: true })

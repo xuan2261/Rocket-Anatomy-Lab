@@ -12,6 +12,7 @@ import {
   stopTimeline,
   toggleTimelineDirection,
 } from './core/timeline.js'
+import { entityLabel, onLanguageChange, t } from './i18n.mjs'
 
 export function createTimelineController({
   assemblyIds,
@@ -40,13 +41,16 @@ export function createTimelineController({
     slider.step = '1'
   }
 
-  const labelFor = id => assemblyLabels.get(id) ?? id
+  const labelFor = id => entityLabel(id, assemblyLabels.get(id) ?? id)
   const stepText = current => {
     const total = current.assemblyIds.length
-    const focus = current.focusedAssemblyId ? ` · Trọng tâm: ${labelFor(current.focusedAssemblyId)}` : ''
-    if (current.stepIndex === 0) return `Trạng thái lắp ghép ban đầu${focus}`
-    if (current.stepIndex === total) return `Đã tách toàn bộ các cụm số hóa${focus}`
-    return `Bước ${current.stepIndex}/${total}${focus}`
+    let base = t('timeline.initial')
+    if (current.stepIndex === total) base = t('timeline.fullyExploded')
+    else if (current.stepIndex > 0) base = t('timeline.step', { step: current.stepIndex, total })
+    if (current.focusedAssemblyId) {
+      base += ` · ${t('timeline.focus', { label: labelFor(current.focusedAssemblyId) })}`
+    }
+    return base
   }
 
   const clearTimer = () => {
@@ -62,24 +66,24 @@ export function createTimelineController({
     if (nextBtn) nextBtn.disabled = !canAdvance
     if (playBtn) {
       playBtn.disabled = !canAdvance
-      playBtn.textContent = state.playback === 'playing' ? 'Tạm dừng' : 'Phát'
+      playBtn.textContent = state.playback === 'playing' ? t('timeline.pause') : t('timeline.play')
       playBtn.setAttribute('aria-pressed', String(state.playback === 'playing'))
-      playBtn.setAttribute('aria-label', state.playback === 'playing' ? 'Tạm dừng trình bày có hướng dẫn' : 'Phát trình bày có hướng dẫn')
+      playBtn.setAttribute('aria-label', state.playback === 'playing' ? t('timeline.pauseAria') : t('timeline.playAria'))
     }
     if (restartBtn) restartBtn.disabled = disabledNow || state.stepIndex === 0
     if (directionBtn) {
       directionBtn.disabled = disabledNow
-      directionBtn.textContent = state.direction === 'forward' ? 'Hướng: Tháo rời' : 'Hướng: Lắp lại'
+      directionBtn.textContent = state.direction === 'forward' ? t('timeline.directionDisassemble') : t('timeline.directionAssemble')
       directionBtn.setAttribute('aria-pressed', String(state.direction === 'reverse'))
-      directionBtn.setAttribute('aria-label', state.direction === 'forward' ? 'Hướng trình bày: tháo rời' : 'Hướng trình bày: lắp lại')
+      directionBtn.setAttribute('aria-label', state.direction === 'forward' ? t('timeline.directionDisassembleAria') : t('timeline.directionAssembleAria'))
     }
     if (slider) {
       slider.disabled = disabledNow
       slider.value = String(state.stepIndex)
       slider.setAttribute('aria-valuetext', stepText(state))
     }
-    if (status) status.textContent = disabledNow ? 'Dòng thời gian không khả dụng ở chế độ chỉ quan sát' : stepText(state)
-    if (motionBadge) motionBadge.textContent = state.reducedMotion ? 'Chuyển động: giảm' : 'Chuyển động: tiêu chuẩn'
+    if (status) status.textContent = disabledNow ? t('timeline.unavailable') : stepText(state)
+    if (motionBadge) motionBadge.textContent = state.reducedMotion ? t('timeline.motionReduced') : t('timeline.motionStandard')
   }
 
   const schedulePlayback = () => {
@@ -134,6 +138,7 @@ export function createTimelineController({
     render()
   }
   media?.addEventListener?.('change', onMediaChange)
+  const unsubscribeLanguage = onLanguageChange(() => render())
 
   const setDisabled = value => {
     isDisabled = Boolean(value)
@@ -154,6 +159,7 @@ export function createTimelineController({
   const destroy = () => {
     clearTimer()
     media?.removeEventListener?.('change', onMediaChange)
+    unsubscribeLanguage()
   }
 
   render()
