@@ -1,13 +1,13 @@
 {
   "name": "rocket-anatomy-lab",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "node --test tests/*.test.mjs",
     "verify": "npm run build && npm test && npm run check:modules && npm run qualify:semantic && npm run qualify:assembly",
-    "check:modules": "node --check public/bootstrap.mjs && node --check public/real-app.mjs && node --check public/fallback-app.mjs && node --check scripts/lib/assembly-glb.mjs && node --check scripts/lib/source-intake.mjs && node --check scripts/intake-source-glb.mjs && node --check scripts/reauthor-assembly-glb.mjs && node --check scripts/qualify-assembly-glb.mjs && node --check scripts/phase3b-real-asset-gate.mjs && node --check scripts/fetch-official-source.mjs && node --check public/timeline-controller.mjs && node --check scripts/serve-local.mjs && node --check public/section-controller.mjs",
+    "check:modules": "node --check public/i18n.mjs && node --check public/bootstrap.mjs && node --check public/real-app.mjs && node --check public/fallback-app.mjs && node --check scripts/lib/assembly-glb.mjs && node --check scripts/lib/source-intake.mjs && node --check scripts/intake-source-glb.mjs && node --check scripts/reauthor-assembly-glb.mjs && node --check scripts/qualify-assembly-glb.mjs && node --check scripts/phase3b-real-asset-gate.mjs && node --check scripts/fetch-official-source.mjs && node --check public/timeline-controller.mjs && node --check scripts/serve-local.mjs && node --check public/section-controller.mjs",
     "qualify:semantic": "node scripts/qualify-curated-map.mjs",
     "build:assembly": "node scripts/reauthor-assembly-glb.mjs",
     "qualify:assembly": "node --test tests/assembly-glb.test.mjs tests/phase3-contract.test.mjs",
@@ -25,7 +25,7 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:report": "playwright show-report",
     "verify:ci": "npm run build && npm run fetch:source && npm run verify:phase5 && npm run check:localization",
-    "check:localization": "node scripts/check-vietnamese-ui.mjs",
+    "check:localization": "node scripts/check-i18n-ui.mjs",
     "test:all": "npm run verify:ci && npm run test:e2e"
   },
   "devDependencies": {

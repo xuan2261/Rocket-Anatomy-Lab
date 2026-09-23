@@ -1,13 +1,13 @@
 import {
   createSectionState,
   resetSection,
-  sectionAriaValueText,
   setSectionAxis,
   setSectionCapped,
   setSectionEnabled,
   setSectionPosition,
   toggleSectionInverted,
 } from './core/section.js'
+import { onLanguageChange, t } from './i18n.mjs'
 
 export function createSectionController({
   disabled = false,
@@ -20,25 +20,24 @@ export function createSectionController({
   const capBtn = document.querySelector('#sectionCapBtn')
   const slider = document.querySelector('#sectionSlider')
   const status = document.querySelector('#sectionStatus')
-  const controls = [toggleBtn, invertBtn, capBtn, slider, ...axisButtons].filter(Boolean)
   let state = createSectionState()
   let isDisabled = Boolean(disabled)
   let capsAvailable = Boolean(cappingSupported)
   if (!capsAvailable) state = setSectionCapped(state, false)
 
+  const directionKey = () => state.inverted ? 'section.inverted' : 'section.standard'
   const statusText = () => {
-    if (isDisabled) return 'Mặt cắt không khả dụng ở chế độ dự phòng'
-    if (!state.enabled) return 'Mặt cắt đang tắt'
-    const cap = state.capped && capsAvailable ? 'có nắp trực quan' : 'mặt cắt mở'
-    const direction = state.inverted ? 'đảo hướng' : 'chuẩn'
-    return `${state.axis.toUpperCase()} cut · ${Math.round(state.position * 100)}% · ${direction} · ${cap}`
+    if (isDisabled) return t('section.unavailable')
+    if (!state.enabled) return t('section.offStatus')
+    const cap = t(state.capped && capsAvailable ? 'section.visualCap' : 'section.open')
+    return `${state.axis.toUpperCase()} · ${Math.round(state.position * 100)}% · ${t(directionKey())} · ${cap}`
   }
 
   const render = () => {
     const hardDisabled = isDisabled
     if (toggleBtn) {
       toggleBtn.disabled = hardDisabled
-      toggleBtn.textContent = state.enabled ? 'Mặt cắt: Bật' : 'Mặt cắt: Tắt'
+      toggleBtn.textContent = t(state.enabled ? 'section.toggleOn' : 'section.toggleOff')
       toggleBtn.setAttribute('aria-pressed', String(state.enabled))
     }
     axisButtons.forEach(button => {
@@ -48,19 +47,21 @@ export function createSectionController({
     if (invertBtn) {
       invertBtn.disabled = hardDisabled || !state.enabled
       invertBtn.setAttribute('aria-pressed', String(state.inverted))
-      invertBtn.textContent = state.inverted ? 'Hướng: Đảo' : 'Hướng: Chuẩn'
+      invertBtn.textContent = t(state.inverted ? 'section.directionInverted' : 'section.directionStandard')
     }
     if (capBtn) {
       capBtn.disabled = hardDisabled || !state.enabled || !capsAvailable
       capBtn.setAttribute('aria-pressed', String(state.capped && capsAvailable))
-      capBtn.textContent = capsAvailable
-        ? (state.capped ? 'Nắp trực quan: Bật' : 'Nắp trực quan: Tắt')
-        : 'Nắp trực quan: Không khả dụng'
+      capBtn.textContent = t(!capsAvailable ? 'section.capUnavailable' : state.capped ? 'section.capOn' : 'section.capOff')
     }
     if (slider) {
       slider.disabled = hardDisabled || !state.enabled
       slider.value = String(Math.round(state.position * 100))
-      slider.setAttribute('aria-valuetext', sectionAriaValueText(state))
+      slider.setAttribute('aria-valuetext', t('section.sliderValue', {
+        percent: Math.round(state.position * 100),
+        axis: state.axis.toUpperCase(),
+        direction: t(directionKey()),
+      }))
     }
     if (status) status.textContent = statusText()
   }
@@ -79,6 +80,7 @@ export function createSectionController({
   invertBtn?.addEventListener('click', () => commit(toggleSectionInverted(state), 'invert'))
   capBtn?.addEventListener('click', () => commit(setSectionCapped(state, !state.capped), 'cap'))
   slider?.addEventListener('input', () => commit(setSectionPosition(state, Number(slider.value) / 100), 'position'))
+  const unsubscribeLanguage = onLanguageChange(() => render())
 
   const setDisabled = value => {
     isDisabled = Boolean(value)
@@ -105,6 +107,6 @@ export function createSectionController({
     setDisabled,
     setCappingSupported,
     resetSilently,
-    destroy: () => {},
+    destroy: () => unsubscribeLanguage(),
   }
 }

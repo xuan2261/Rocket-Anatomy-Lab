@@ -19,8 +19,12 @@ test('real renderer prefers assembly-capable GLB and falls back to presentation 
   assert.match(code, /saturn-v-education\.glb/)
   assert.match(code, /applyAssemblyMapping/)
   assert.match(code, /historicalStageBoundaries/)
-  assert.match(code, /GLB giáo dục hỗ trợ lắp\/tách/)
+  assert.match(code, /app\.assetAssembly/)
+  assert.match(code, /app\.assetPresentation/)
   assert.match(code, /using verified presentation asset/)
+  const i18n = fs.readFileSync(new URL('../public/i18n.mjs', import.meta.url), 'utf8')
+  assert.match(i18n, /GLB giáo dục hỗ trợ lắp\/tách/)
+  assert.match(i18n, /Assembly-capable educational GLB/)
   assert.doesNotMatch(code, /innerHTML\s*=/)
 })
 

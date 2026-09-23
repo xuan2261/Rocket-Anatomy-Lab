@@ -1,9 +1,9 @@
-# 🚀 Rocket Anatomy Lab
+# 🚀 Rocket Anatomy Lab - Xuan Bui Thanh - Khoa KTCS - HVHQ
 
 [![CI](https://github.com/xuan2261/Rocket-Anatomy-Lab/actions/workflows/ci.yml/badge.svg)](https://github.com/xuan2261/Rocket-Anatomy-Lab/actions/workflows/ci.yml)
 [![Deploy GitHub Pages](https://github.com/xuan2261/Rocket-Anatomy-Lab/actions/workflows/pages.yml/badge.svg)](https://github.com/xuan2261/Rocket-Anatomy-Lab/actions/workflows/pages.yml)
 
-**Rocket Anatomy Lab** là ứng dụng trực quan hóa 3D mang mục đích **giáo dục về phương tiện phóng vũ trụ dân sự**, sử dụng mô hình Saturn V chính thức của NASA làm tài nguyên minh họa. Ứng dụng tập trung vào quan sát cấu trúc số hóa, tách cụm trực quan, trình bày có hướng dẫn và mặt cắt/cutaway.
+**Rocket Anatomy Lab - Xuan Bui Thanh - Khoa KTCS - HVHQ** là ứng dụng trực quan hóa 3D mang mục đích **giáo dục về phương tiện phóng vũ trụ dân sự**, sử dụng mô hình Saturn V chính thức của NASA làm tài nguyên minh họa. Ứng dụng tập trung vào quan sát cấu trúc số hóa, tách cụm trực quan, trình bày có hướng dẫn và mặt cắt/cutaway.
 
 > Các cụm trong ứng dụng là **vùng hình học phục vụ hiển thị** được tái cấu trúc từ mô hình nguồn. Chúng **không phải ranh giới tầng lịch sử** và không phải hướng dẫn lắp ráp ngoài đời thực.
 
@@ -17,7 +17,8 @@
 - Tôn trọng `prefers-reduced-motion`.
 - Mặt cắt X/Y/Z, vị trí cắt, đảo hướng và **nắp trực quan** bằng stencil.
 - Fallback fail-closed: tính năng yêu cầu GLB thật sẽ bị vô hiệu thay vì mô phỏng sai.
-- Giao diện tiếng Việt, responsive cho desktop/mobile/landscape.
+- Giao diện **song ngữ Việt/Anh (VI/EN)**, mặc định tiếng Việt, ghi nhớ lựa chọn bằng `localStorage` và cập nhật `html[lang]` cho công nghệ hỗ trợ.
+- Responsive cho desktop/mobile/landscape; nút đổi ngôn ngữ có vùng tương tác tối thiểu 44×44 px.
 - Test nhiều lớp: unit, integration/contract và E2E Playwright.
 - CI GitHub Actions và CD lên GitHub Pages.
 
@@ -44,7 +45,7 @@ Three.js renderer
   └─ Section / Cutaway
       │
       ▼
-UI tiếng Việt + accessibility
+UI VI/EN + accessibility
 ```
 
 Logic domain nằm trong `src/`; mã TypeScript được build sang `public/core/`. Renderer và controller UI nằm trong `public/`.
@@ -109,7 +110,7 @@ npm test
 npm run verify:phase5
 ```
 
-### Kiểm giao diện tiếng Việt
+### Kiểm giao diện song ngữ VI/EN
 
 ```bash
 npm run check:localization
@@ -166,11 +167,19 @@ Mô hình nguồn NASA được pin bằng provenance/fingerprint. Pipeline ki�
 - metadata provenance;
 - fail-closed nếu source drift.
 
+## 🌐 Ngôn ngữ
+
+- Mặc định: **Tiếng Việt**.
+- Nút `VI` / `EN` nằm ở thanh tiêu đề và đổi cả text tĩnh lẫn text động của renderer, Inspector, Timeline và Section/Cutaway.
+- Lựa chọn được lưu trong `localStorage` và giữ nguyên sau khi tải lại trang.
+- `document.documentElement.lang` được cập nhật thành `vi` hoặc `en` để screen reader dùng cách phát âm phù hợp.
+- E2E kiểm cả chuyển ngôn ngữ, trạng thái `aria-pressed` và persistence qua reload.
+
 ## ♿ Accessibility
 
 - Điều khiển chính có vùng tương tác tối thiểu 44×44 px.
 - Native range giữ keyboard behavior.
-- Nút có `aria-label`/`aria-pressed` phù hợp.
+- Nút có `aria-label`/`aria-pressed` phù hợp; nhóm chuyển ngôn ngữ cũng cập nhật ARIA theo locale.
 - Canvas có mô tả truy cập.
 - Timeline hỗ trợ reduced-motion.
 - Layout không tràn ngang ở desktop/mobile/landscape đã kiểm.

@@ -19,6 +19,7 @@ import { cameraTransitionDurationMs, standardTransitionDurationMs, timelineAssem
 import { createTimelineController } from './timeline-controller.mjs'
 import { sectionPlaneDescriptor } from './core/section.js'
 import { createSectionController } from './section-controller.mjs'
+import { entityDescription, entityLabel, onLanguageChange, t } from './i18n.mjs'
 
 const EDUCATION_ASSET = './assets/saturn-v-education.glb'
 const LOCAL_ASSET = './assets/saturn-v.glb'
@@ -63,6 +64,8 @@ let sectionCapMesh = null
 let sectionStencilMeshes = []
 let sectionStencilMaterials = []
 let sectionSourceMeshes = []
+let activeSourceKey = null
+let activeAxisKey = 'Y'
 const sectionPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
 
 const scene = new THREE.Scene()
@@ -599,7 +602,7 @@ async function loadModel() {
     cloneMaterials(model)
     scene.add(model)
     mapping = applyAssemblyMapping(model, gltf.parser?.json)
-    source = 'GLB giáo dục tái cấu trúc cục bộ'
+    source = 'source.educationLocal'
   } catch (assemblyError) {
     if (model) {
       scene.remove(model)
@@ -610,10 +613,10 @@ async function loadModel() {
     rendererKind = 'presentation'
     try {
       gltf = await loader.loadAsync(LOCAL_ASSET)
-      source = 'GLB trình bày NASA cục bộ'
+      source = 'source.presentationLocal'
     } catch {
       gltf = await loader.loadAsync(NASA_ASSET)
-      source = 'tài nguyên trình bày NASA từ xa'
+      source = 'source.presentationRemote'
     }
     model = gltf.scene
     cloneMaterials(model)
@@ -626,16 +629,24 @@ async function loadModel() {
   overviewCamera = { position: camera.position.clone(), target: controls.target.clone() }
   timelineAmounts = new Map(manifest.groups.map(group => [group.id, 0]))
   applyStateToModel()
-  if (rendererKind === 'assembly') {
-    assetStatus.textContent = `GLB giáo dục hỗ trợ lắp/tách · ${manifest.groups.length} nhánh có thể biến đổi · trục ${mapping.axisKey.toUpperCase()}`
-    assetStatus.dataset.state = 'assembly'
-    sourceNote.textContent = `Đã tải GLB giáo dục tái cấu trúc từ ${source}. Mỗi cụm trực quan chính là một nhánh độc lập và trạng thái tách cụm có thể đảo ngược. Ranh giới chỉ phục vụ hiển thị, không khẳng định ranh giới tầng lịch sử.`
-  } else {
-    assetStatus.textContent = `GLB trình bày Saturn V của NASA · ${partRoots.length} đối tượng đã tuyển chọn · trục ${mapping.axisKey.toUpperCase()}`
-    assetStatus.dataset.state = 'real'
-    sourceNote.textContent = `Đã tải tài nguyên trình bày từ ${source}. Bản đồ đối tượng được ghim theo Git blob NASA ${presentationManifest.assetFingerprint.gitSha.slice(0, 12)}…; chế độ này hỗ trợ quan sát nhưng không tách các cụm chính nếu chưa tái cấu trúc asset.`
-  }
+  activeSourceKey = source
+  activeAxisKey = mapping.axisKey.toUpperCase()
+  renderAssetCopy()
   renderRawInventory()
+}
+
+function renderAssetCopy() {
+  if (!activeSourceKey) return
+  const source = t(activeSourceKey)
+  if (rendererKind === 'assembly') {
+    assetStatus.textContent = t('app.assetAssembly', { count: manifest.groups.length, axis: activeAxisKey })
+    assetStatus.dataset.state = 'assembly'
+    sourceNote.textContent = t('app.sourceAssembly', { source })
+  } else {
+    assetStatus.textContent = t('app.assetPresentation', { count: partRoots.length, axis: activeAxisKey })
+    assetStatus.dataset.state = 'real'
+    sourceNote.textContent = t('app.sourcePresentation', { source, sha: presentationManifest.assetFingerprint.gitSha.slice(0, 12) })
+  }
 }
 
 function renderRawInventory() {
@@ -645,13 +656,13 @@ function renderRawInventory() {
     const row = document.createElement('div')
     row.className = 'raw-node-row'
     const rawName = document.createElement('code')
-    rawName.textContent = partRoot.name || '(không tên)'
+    rawName.textContent = partRoot.name || t('raw.unnamed')
     const groupId = rendererKind === 'assembly'
       ? partRoot.userData.rocketAssemblyId
       : presentationMap?.get(partRoot.name)
     const group = manifest.groups.find(item => item.id === groupId)
     const mapping = document.createElement('span')
-    mapping.textContent = group?.label ?? 'Chưa ánh xạ'
+    mapping.textContent = group ? entityLabel(group.id, group.label) : t('raw.unmapped')
     row.append(rawName, mapping)
     rawInventory.append(row)
   }
@@ -671,7 +682,7 @@ function renderTree() {
     const check = document.createElement('input')
     check.type = 'checkbox'
     check.checked = !state.hiddenIds.has(group.id)
-    check.setAttribute('aria-label', `Hiện ${group.label}`)
+    check.setAttribute('aria-label', t('tree.showPart', { label: entityLabel(group.id, group.label) }))
     check.addEventListener('change', () => {
       state = toggleHidden(state, group.id)
       renderUiAndModel()
@@ -682,9 +693,9 @@ function renderTree() {
     button.type = 'button'
     button.className = 'tree-select'
     const label = document.createElement('strong')
-    label.textContent = group.label
+    label.textContent = entityLabel(group.id, group.label)
     const meta = document.createElement('span')
-    meta.textContent = rendererKind === 'assembly' ? '1 nhánh có thể biến đổi' : `${groupedNodes.get(group.id)?.length ?? 0} đối tượng gốc đã nhập`
+    meta.textContent = rendererKind === 'assembly' ? t('tree.oneTransformable') : t('tree.importedObjects', { count: groupedNodes.get(group.id)?.length ?? 0 })
     button.append(label, meta)
     button.addEventListener('click', () => {
       state = selectPart(state, group.id)
@@ -695,23 +706,23 @@ function renderTree() {
   }
 }
 
-const modeLabel = mode => ({ normal: 'Bình thường', ghost: 'Bóng mờ', xray: 'X-quang' }[mode] ?? mode)
+const modeLabel = mode => ({ normal: t('viewer.mode.normal'), ghost: t('viewer.mode.ghost'), xray: t('viewer.mode.xray') }[mode] ?? mode)
 
 function renderInspector() {
   const group = manifest.groups.find(item => item.id === state.selectedId) ?? null
   const view = group ? deriveSemanticView(manifest, state).find(item => item.id === group.id) : null
-  inspectorTitle.textContent = group?.label ?? 'Chưa chọn'
-  inspectorDescription.textContent = group?.description ?? 'Chọn một cụm giáo dục trên mô hình hoặc trong cây cấu trúc.'
-  visibilityValue.textContent = view ? (view.visible ? 'Đang hiện' : 'Đang ẩn') : '—'
+  inspectorTitle.textContent = group ? entityLabel(group.id, group.label) : t('inspector.noneTitle')
+  inspectorDescription.textContent = group ? entityDescription(group.id, group.description) : t('inspector.noneDescription')
+  visibilityValue.textContent = view ? t(view.visible ? 'inspector.visible' : 'inspector.hidden') : '—'
   modeValue.textContent = modeLabel(state.mode)
   const timelineState = timelineController?.getState?.()
   explodeValue.textContent = timelineMode && timelineState
-    ? `Có hướng dẫn ${Math.round(timelineState.progress * 100)}%`
+    ? t('inspector.guided', { percent: Math.round(timelineState.progress * 100) })
     : `${Math.round(state.explode * 100)}%`
   isolateBtn.disabled = !group
   hideBtn.disabled = !group
-  isolateBtn.textContent = group && state.isolatedId === group.id ? 'Thoát cô lập' : 'Cô lập'
-  hideBtn.textContent = group && state.hiddenIds.has(group.id) ? 'Hiện' : 'Ẩn'
+  isolateBtn.textContent = t(group && state.isolatedId === group.id ? 'inspector.exitIsolate' : 'inspector.isolate')
+  hideBtn.textContent = t(group && state.hiddenIds.has(group.id) ? 'inspector.show' : 'inspector.hide')
   modeChip.textContent = modeValue.textContent
   modeButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.mode === state.mode)))
 }
@@ -804,9 +815,16 @@ function animate(now = performance.now()) {
 }
 animate()
 
+const unsubscribeLanguage = onLanguageChange(() => {
+  renderAssetCopy()
+  renderRawInventory()
+  renderUiAndModel()
+})
+
 window.addEventListener('pagehide', () => {
   cancelAnimationFrame(frameId)
   timelineController?.destroy?.()
+  unsubscribeLanguage()
   sectionController?.destroy?.()
   resizeObserver.disconnect()
   controls.dispose()

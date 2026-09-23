@@ -30,6 +30,11 @@ button:focus-visible, input:focus-visible, canvas:focus-visible { outline: 3px s
 button:disabled { opacity: .45; cursor: not-allowed; }
 .app-shell { min-height: 100vh; display: grid; grid-template-rows: auto 1fr auto; }
 .topbar { display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 18px 22px; border-bottom: 1px solid var(--border); background: rgba(11,16,24,.94); }
+
+.topbar-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+.language-switcher { display: inline-flex; align-items: center; gap: 4px; padding: 3px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel); }
+.language-switcher button { min-width: 44px; min-height: 44px; padding: 0 12px; background: transparent; }
+.language-switcher button[aria-pressed="true"] { background: rgba(125,199,255,.16); border-color: var(--accent); color: var(--accent-strong); }
 h1 { margin: 2px 0 0; font-size: clamp(20px, 2.4vw, 30px); letter-spacing: -.025em; }
 .eyebrow, .panel-kicker { margin: 0; color: var(--accent); text-transform: uppercase; letter-spacing: .12em; font-size: 11px; font-weight: 800; }
 .status-badge { padding: 8px 12px; border: 1px solid var(--border); border-radius: 999px; color: var(--muted); font-size: 13px; }
@@ -72,6 +77,8 @@ input[type="range"] { width: 100%; min-height: 44px; }
 }
 @media (max-width: 700px) {
   .topbar { align-items: flex-start; flex-direction: column; }
+  .topbar-actions { width: 100%; justify-content: space-between; align-items: center; }
+  .status-badge { max-width: 100%; }
   .workspace { grid-template-columns: 1fr; grid-template-rows: auto minmax(480px, 58vh) auto; }
   .structure-panel { max-height: 300px; }
   .viewer-panel { grid-row: 2; }
