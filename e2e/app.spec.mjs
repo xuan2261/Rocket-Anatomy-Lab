@@ -17,23 +17,23 @@ test.describe('Rocket Anatomy Lab — luồng chính', () => {
     await expect(page.getByText('MẶT CẮT / QUAN SÁT BÊN TRONG')).toBeVisible()
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Rocket Anatomy Lab - Xuan Bui Thanh - Khoa KTCS - HVHQ')
 
-    await page.getByRole('button', { name: 'EN' }).click()
+    await page.locator('[data-language="en"]').click()
     await expect(page.locator('html')).toHaveAttribute('lang', 'en')
     await expect(page.getByRole('heading', { name: 'Educational assemblies' })).toBeVisible()
     await expect(page.getByText('GUIDED PRESENTATION')).toBeVisible()
     await expect(page.getByText('SECTION / CUTAWAY')).toBeVisible()
     await expect(page.locator('#assetStatus')).toContainText('Assembly-capable educational GLB')
-    await expect(page.getByRole('button', { name: 'EN' })).toHaveAttribute('aria-pressed', 'true')
+    await expect(page.locator('[data-language="en"]')).toHaveAttribute('aria-pressed', 'true')
 
     await page.reload()
     await waitForRealAsset(page)
     await expect(page.locator('html')).toHaveAttribute('lang', 'en')
     await expect(page.getByRole('heading', { name: 'Educational assemblies' })).toBeVisible()
 
-    await page.getByRole('button', { name: 'VI' }).click()
+    await page.locator('[data-language="vi"]').click()
     await expect(page.locator('html')).toHaveAttribute('lang', 'vi')
     await expect(page.getByRole('heading', { name: 'Các cụm giáo dục' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'VI' })).toHaveAttribute('aria-pressed', 'true')
+    await expect(page.locator('[data-language="vi"]')).toHaveAttribute('aria-pressed', 'true')
   })
 
   test('chọn cụm, tách cụm và điều khiển timeline', async ({ page }) => {
