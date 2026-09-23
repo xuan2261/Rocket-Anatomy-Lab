@@ -24,7 +24,7 @@
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:report": "playwright show-report",
-    "verify:ci": "npm run fetch:source && npm run verify:phase5 && npm run check:localization",
+    "verify:ci": "npm run build && npm run fetch:source && npm run verify:phase5 && npm run check:localization",
     "check:localization": "node scripts/check-vietnamese-ui.mjs",
     "test:all": "npm run verify:ci && npm run test:e2e"
   },
