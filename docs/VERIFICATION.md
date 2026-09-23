@@ -6,7 +6,7 @@
 
 Automated coverage includes all Phase 1–4 regressions plus Phase 5.
 
-- complete test suite: **69/69 PASS**
+- complete test suite: **70/70 PASS**
 - Phase 5 focused suite: **15/15 PASS**
 - TypeScript build: PASS
 - module syntax: PASS
