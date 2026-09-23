@@ -3,7 +3,6 @@ import { test, expect } from '@playwright/test'
 async function waitForRealAsset(page) {
   const badge = page.locator('#assetStatus')
   await expect(badge).toHaveAttribute('data-state', 'assembly', { timeout: 30_000 })
-  await expect(badge).toContainText('GLB giáo dục hỗ trợ lắp/tách')
 }
 
 test.describe('Rocket Anatomy Lab — luồng chính', () => {
@@ -12,6 +11,7 @@ test.describe('Rocket Anatomy Lab — luồng chính', () => {
     await waitForRealAsset(page)
 
     await expect(page.locator('html')).toHaveAttribute('lang', 'vi')
+    await expect(page.locator('#assetStatus')).toContainText('GLB giáo dục hỗ trợ lắp/tách')
     await expect(page.getByRole('heading', { name: 'Các cụm giáo dục' })).toBeVisible()
     await expect(page.getByText('TRÌNH BÀY CÓ HƯỚNG DẪN')).toBeVisible()
     await expect(page.getByText('MẶT CẮT / QUAN SÁT BÊN TRONG')).toBeVisible()
