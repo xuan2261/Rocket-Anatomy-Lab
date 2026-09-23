@@ -26,7 +26,8 @@ jobs:
           base64 -d /tmp/project.b64 > /tmp/project.tar.xz
           xz -d /tmp/project.tar.xz
           tar -xf /tmp/project.tar -C .
-          rm -rf .bootstrap .github/workflows/bootstrap.yml
+          rm -rf .bootstrap
+          rm -f .github/workflows/ci.yml .github/workflows/pages.yml
 
       - name: Commit cây mã nguồn
         shell: bash
