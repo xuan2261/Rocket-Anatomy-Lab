@@ -1,0 +1,13 @@
+{
+  "asset": "public/assets/saturn-v-education.glb",
+  "purpose": "section/cutaway visual-cap suitability check",
+  "note": "Digital educational assemblies are display-oriented triangle partitions, not CAD-solid bodies.",
+  "assemblies": [
+    {"id":"base-assembly","triangles":31754,"boundaryEdges":55,"nonManifoldEdges":9397},
+    {"id":"lower-body-assembly","triangles":360,"boundaryEdges":88,"nonManifoldEdges":81},
+    {"id":"center-body-assembly","triangles":880,"boundaryEdges":315,"nonManifoldEdges":92},
+    {"id":"upper-body-assembly","triangles":1248,"boundaryEdges":227,"nonManifoldEdges":401},
+    {"id":"nose-stack-assembly","triangles":572,"boundaryEdges":168,"nonManifoldEdges":72}
+  ],
+  "conclusion": "Stencil capping is a display aid only. Users can disable Visual cap when topology produces artifacts."
+}

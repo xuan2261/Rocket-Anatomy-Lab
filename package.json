@@ -1,0 +1,35 @@
+{
+  "name": "rocket-anatomy-lab",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test tests/*.test.mjs",
+    "verify": "npm run build && npm test && npm run check:modules && npm run qualify:semantic && npm run qualify:assembly",
+    "check:modules": "node --check public/bootstrap.mjs && node --check public/real-app.mjs && node --check public/fallback-app.mjs && node --check scripts/lib/assembly-glb.mjs && node --check scripts/lib/source-intake.mjs && node --check scripts/intake-source-glb.mjs && node --check scripts/reauthor-assembly-glb.mjs && node --check scripts/qualify-assembly-glb.mjs && node --check scripts/phase3b-real-asset-gate.mjs && node --check scripts/fetch-official-source.mjs && node --check public/timeline-controller.mjs && node --check scripts/serve-local.mjs && node --check public/section-controller.mjs",
+    "qualify:semantic": "node scripts/qualify-curated-map.mjs",
+    "build:assembly": "node scripts/reauthor-assembly-glb.mjs",
+    "qualify:assembly": "node --test tests/assembly-glb.test.mjs tests/phase3-contract.test.mjs",
+    "intake:source": "node scripts/intake-source-glb.mjs",
+    "qualify:real": "node scripts/phase3b-real-asset-gate.mjs",
+    "verify:phase3b": "npm run verify && npm run qualify:real",
+    "fetch:source": "node scripts/fetch-official-source.mjs",
+    "qualify:timeline": "node --test tests/timeline.test.mjs tests/phase4-contract.test.mjs",
+    "verify:phase4": "npm run verify:phase3b && npm run qualify:timeline",
+    "serve": "node scripts/serve-local.mjs",
+    "qualify:section": "node --test tests/section.test.mjs tests/phase5-contract.test.mjs",
+    "verify:phase5": "npm run verify:phase4 && npm run qualify:section",
+    "test:unit": "node --test tests/*.test.mjs",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:report": "playwright show-report",
+    "verify:ci": "npm run build && npm run fetch:source && npm run verify:phase5 && npm run check:localization",
+    "check:localization": "node scripts/check-vietnamese-ui.mjs",
+    "test:all": "npm run verify:ci && npm run test:e2e"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "typescript": "7.0.2"
+  }
+}
