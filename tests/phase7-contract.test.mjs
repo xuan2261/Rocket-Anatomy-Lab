@@ -41,9 +41,25 @@ test('CI has a pinned-environment visual regression lane', () => {
   assert.match(ci, /name: E2E \+ accessibility Chromium/)
 })
 
-test('eight CI-native theme and language golden snapshots are committed', () => {
+test('CI-native shell and selection-state golden snapshots are committed', () => {
   const files = fs.readdirSync(snapshotDir).filter(name => name.endsWith('.png')).sort()
   assert.deepEqual(files, [
+    'selection-center-en-ghost-desktop-chromium-linux.png',
+    'selection-center-en-ghost-mobile-chromium-linux.png',
+    'selection-center-en-normal-desktop-chromium-linux.png',
+    'selection-center-en-normal-mobile-chromium-linux.png',
+    'selection-center-en-xray-desktop-chromium-linux.png',
+    'selection-center-en-xray-mobile-chromium-linux.png',
+    'selection-center-vi-ghost-desktop-chromium-linux.png',
+    'selection-center-vi-ghost-mobile-chromium-linux.png',
+    'selection-center-vi-normal-desktop-chromium-linux.png',
+    'selection-center-vi-normal-mobile-chromium-linux.png',
+    'selection-center-vi-xray-desktop-chromium-linux.png',
+    'selection-center-vi-xray-mobile-chromium-linux.png',
+    'selection-reload-en-normal-desktop-chromium-linux.png',
+    'selection-reload-en-normal-mobile-chromium-linux.png',
+    'selection-reload-vi-normal-desktop-chromium-linux.png',
+    'selection-reload-vi-normal-mobile-chromium-linux.png',
     'shell-en-dark-desktop-chromium-linux.png',
     'shell-en-dark-mobile-chromium-linux.png',
     'shell-en-light-desktop-chromium-linux.png',
@@ -53,6 +69,16 @@ test('eight CI-native theme and language golden snapshots are committed', () => 
     'shell-vi-light-desktop-chromium-linux.png',
     'shell-vi-light-mobile-chromium-linux.png',
   ])
+})
+
+test('selection visual suite covers reload, normal, ghost and xray without runtime errors', () => {
+  assert.match(visual, /selection visual contract/)
+  assert.match(visual, /data-selected-assembly/)
+  assert.match(visual, /selection-reload-\$\{language\}-normal/)
+  assert.match(visual, /selection-center-\$\{language\}-normal/)
+  assert.match(visual, /selection-center-\$\{language\}-ghost/)
+  assert.match(visual, /selection-center-\$\{language\}-xray/)
+  assert.match(visual, /runtimeErrors/)
 })
 
 test('Pages deploy is followed by a deployed smoke gate', () => {
