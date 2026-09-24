@@ -930,7 +930,7 @@ dt { color: var(--muted); } dd { margin: 0; font-weight: 700; }
   .control-center-header > div:first-child { display: none; }
   .control-tabs {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 4px;
     overflow: visible;
   }
