@@ -59,8 +59,12 @@ async function setExplodeWithKeyboard(page, amount) {
   const slider = page.locator('#explodeSlider')
   await slider.focus()
   await slider.press('Home')
+  // Chromium's native range page step is 10 for this 0..100, step-1 input.
+  // Exercise real keyboard input without 50 redundant full-scene updates.
   if (amount === 100) await slider.press('End')
-  else for (let index = 0; index < amount; index += 1) await slider.press('ArrowRight')
+  else if (amount === 50) {
+    for (let index = 0; index < 5; index += 1) await slider.press('PageUp')
+  } else expect(amount).toBe(0)
   await expect(slider).toHaveValue(String(amount))
   await expect(page.locator('#viewport')).toHaveAttribute('data-explode-percent', String(amount))
 }
