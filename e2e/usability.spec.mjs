@@ -159,7 +159,7 @@ test('tablist dùng roving tabindex và Tab đi thẳng vào panel đang mở @u
 
   const objects = page.locator('[data-control-tab="objects"]')
   const view = page.locator('[data-control-tab="view"]')
-  const section = page.locator('[data-control-tab="section"]')
+  const help = page.locator('[data-control-tab="help"]')
 
   await objects.focus()
   await expect(objects).toHaveAttribute('tabindex', '0')
@@ -169,10 +169,26 @@ test('tablist dùng roving tabindex và Tab đi thẳng vào panel đang mở @u
   await expect(objects).toHaveAttribute('tabindex', '-1')
 
   await view.press('End')
-  await expect(section).toBeFocused()
-  await expect(section).toHaveAttribute('tabindex', '0')
+  await expect(help).toBeFocused()
+  await expect(help).toHaveAttribute('tabindex', '0')
   await page.keyboard.press('Tab')
-  await expect(page.locator('#sectionToggleBtn')).toBeFocused()
+  await expect(page.locator('#paneHelp')).toBeFocused()
+})
+
+test('tab Hướng dẫn mở trong một thao tác và giữ nội dung trong Control Center @usability', async ({ page }) => {
+  await page.goto('/?lang=vi')
+  await waitForRealAsset(page)
+
+  const help = page.locator('[data-control-tab="help"]')
+  await expect.poll(() => inViewport(help)).toBe(true)
+  await help.click()
+
+  await expect(help).toHaveAttribute('aria-selected', 'true')
+  await expect(page.locator('#paneHelp')).toBeVisible()
+  await expect(page.locator('#paneHelp .help-card')).toHaveCount(7)
+  await expect(page.locator('#helpDocsLink')).toBeVisible()
+  expect(await inViewport(page.locator('#paneHelp'))).toBe(true)
+  expect(await page.evaluate(() => document.documentElement.scrollHeight > document.documentElement.clientHeight + 1)).toBe(false)
 })
 
 test('skip link đưa keyboard focus trực tiếp vào viewport @usability', async ({ page }) => {
@@ -195,6 +211,7 @@ test('mobile coarse-pointer có touch target cao/rộng 48 px ở control chính
     '[data-language="vi"]',
     '[data-control-tab="objects"]',
     '[data-control-tab="section"]',
+    '[data-control-tab="help"]',
   ]
 
   for (const selector of selectors) {

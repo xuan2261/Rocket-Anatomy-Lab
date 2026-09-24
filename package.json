@@ -12,7 +12,7 @@
     "build:assembly": "node scripts/reauthor-assembly-glb.mjs",
     "qualify:assembly": "node --test tests/assembly-glb.test.mjs tests/phase3-contract.test.mjs",
     "intake:source": "node scripts/intake-source-glb.mjs",
-    "qualify:real": "node scripts/phase3b-real-asset-gate.mjs",
+    "qualify:real": "node scripts/phase3b-real-asset-gate.mjs && node --test tests/assembly-picking.qualify.mjs",
     "verify:phase3b": "npm run verify && npm run qualify:real",
     "fetch:source": "node scripts/fetch-official-source.mjs",
     "qualify:timeline": "node --test tests/timeline.test.mjs tests/phase4-contract.test.mjs",

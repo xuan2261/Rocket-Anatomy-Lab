@@ -18,6 +18,20 @@ async function stableScreenshot(page, name) {
   })
 }
 
+async function stableGuideScreenshot(page, name) {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.locator('[data-control-tab="help"]').click()
+  await expect(page.locator('#paneHelp')).toBeVisible()
+
+  await expect(page).toHaveScreenshot(name, {
+    fullPage: true,
+    animations: 'disabled',
+    caret: 'hide',
+    mask: [page.locator('#viewport'), page.locator('#annotationLayer')],
+    maxDiffPixelRatio: 0.001,
+  })
+}
+
 for (const theme of ['light', 'dark']) {
   test(`visual shell — VI ${theme} @visual`, async ({ page }) => {
     await page.goto('/?renderer=fallback&lang=vi')
@@ -34,6 +48,16 @@ for (const theme of ['light', 'dark']) {
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
     await stableScreenshot(page, `shell-en-${theme}.png`)
   })
+
+  for (const language of ['vi', 'en']) {
+    test(`visual guide — ${language.toUpperCase()} ${theme} @visual`, async ({ page }) => {
+      await page.goto(`/?renderer=fallback&lang=${language}`)
+      await waitForDeterministicShell(page)
+      await page.locator(`[data-theme-value="${theme}"]`).click()
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
+      await stableGuideScreenshot(page, `guide-${language}-${theme}.png`)
+    })
+  }
 }
 
 
@@ -78,6 +102,9 @@ for (const language of ['vi', 'en']) {
     await expect(page.locator('[data-mode="normal"]')).toHaveAttribute('aria-pressed', 'true')
     await captureViewer(page, `selection-reload-${language}-normal.png`)
 
+    // Keep non-selected context in the overview comparison.
+    await page.locator('[data-control-tab="view"]').click()
+    await page.locator('#resetBtn').click()
     await page.locator('[data-control-tab="objects"]').click()
     await page.locator('#tree .tree-select').nth(2).click()
     await expect(page.locator('#viewport')).toHaveAttribute('data-selected-assembly', 'center-body-assembly')

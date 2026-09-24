@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { updateStaticIndexedBounds, firstVisibleAssemblyHit } from './assembly-picking.mjs'
 import {
   initialState,
   selectPart,
@@ -242,6 +243,7 @@ function applyAssemblyMapping(root, parserJson) {
     throw new Error('Assembly GLB safety/meaning metadata is invalid')
   }
 
+  updateStaticIndexedBounds(root)
   root.updateMatrixWorld(true)
   const modelBox = new THREE.Box3().setFromObject(root)
   const { axis, key, extent } = longestAxis(modelBox)
@@ -486,6 +488,9 @@ function updateSelectionState() {
     && (!state.isolatedId || state.isolatedId === selectedId)
 
   canvas.dataset.selectedAssembly = visibleSelection ? selectedId : ''
+  canvas.dataset.isolatedAssembly = state.isolatedId ?? ''
+  canvas.dataset.viewMode = state.mode
+  canvas.dataset.explodePercent = String(Math.round(state.explode * 100))
 }
 
 function applyStateToModel(amountOverride = null) {
@@ -891,6 +896,7 @@ function renderTree() {
   for (const group of manifest.groups) {
     const row = document.createElement('div')
     row.className = 'tree-row'
+    row.dataset.assemblyId = group.id
     row.dataset.selected = String(state.selectedId === group.id)
     row.setAttribute('role', 'treeitem')
     row.setAttribute('aria-selected', String(state.selectedId === group.id))
@@ -1085,7 +1091,7 @@ canvas.addEventListener('pointerup', event => {
   const detailHit = realDetailLoader?.pickPart?.(raycaster)
   if (detailHit?.partId && anatomyController?.selectRealDetailPart?.(detailHit.partId, { push: true })) return
 
-  const hit = raycaster.intersectObject(model, true).find(item => item.object.visible)
+  const hit = firstVisibleAssemblyHit(raycaster, model)
   const id = hit?.object?.userData?.rocketGroupId ?? null
   if (id) {
     state = selectPart(state, id)

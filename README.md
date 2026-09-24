@@ -12,6 +12,25 @@
 
 > Chế độ **Giải phẫu NASA** là lớp kiến thức tham chiếu tách biệt: tên tầng/hệ thống đến từ nguồn NASA, còn vị trí highlight/cut trên GLB chỉ là neo trực quan gần đúng.
 
+## 🖼️ Xem nhanh giao diện
+
+| Bình thường | Bóng mờ | X-quang |
+| --- | --- | --- |
+| ![Chọn cụm thân giữa ở chế độ Bình thường](e2e/visual.spec.mjs-snapshots/selection-center-vi-normal-desktop-chromium-linux.png) | ![Chọn cụm thân giữa ở chế độ Bóng mờ](e2e/visual.spec.mjs-snapshots/selection-center-vi-ghost-desktop-chromium-linux.png) | ![Chọn cụm thân giữa ở chế độ X-quang](e2e/visual.spec.mjs-snapshots/selection-center-vi-xray-desktop-chromium-linux.png) |
+
+**Mobile / deep-link:**  
+![Deep-link bài học trên giao diện mobile](e2e/visual.spec.mjs-snapshots/selection-reload-vi-normal-mobile-chromium-linux.png)
+
+> Các ảnh trên là **golden snapshots CI-native** của chính ứng dụng, không phải mockup. Chúng cũng được dùng để phát hiện visual regression.
+
+## 🚦 Hướng dẫn sử dụng nhanh
+
+1. Kéo mô hình để xoay; lăn chuột hoặc chụm hai ngón để thu/phóng.
+2. Bấm trực tiếp lên tên lửa hoặc chọn một cụm trong tab **Đối tượng**.
+3. Mở **Góc nhìn** để dùng **Bình thường / Bóng mờ / X-quang** và thanh **Tách cụm**.
+4. Dùng **Trình bày**, **Bài học** và **Mặt cắt** để học theo trình tự hoặc quan sát bên trong.
+5. Mở tab **Hướng dẫn / Guide** ngay trong phần mềm nếu cần nhắc nhanh, hoặc xem [hướng dẫn đầy đủ](docs/USER_GUIDE.md).
+
 ## ✨ Tính năng
 
 - Mô hình Saturn V 3D thật bằng **Three.js** và GLB.
@@ -30,6 +49,7 @@
 - **Detail Package Inspector Phase 17**: chọn/hover source part hai chiều giữa viewport và panel, focus part, ghost/isolate, thống kê mesh/triangle/bounds, provenance và deep-link state qua URL.
 - Fallback fail-closed: tính năng yêu cầu GLB thật sẽ bị vô hiệu thay vì mô phỏng sai.
 - Giao diện **song ngữ Việt/Anh (VI/EN)**, mặc định tiếng Việt, ghi nhớ lựa chọn bằng `localStorage` và cập nhật `html[lang]` cho công nghệ hỗ trợ.
+- Tab **Hướng dẫn / Guide** tích hợp ngay trong Control Center, có 5 bước bắt đầu nhanh, hướng dẫn bàn phím và nhắc phạm vi giáo dục; tài liệu chi tiết nằm tại [docs/USER_GUIDE.md](docs/USER_GUIDE.md).
 - Theme **Light/Dark kiểu aerospace workstation**: neutral-first, một brand-blue chính, surface hierarchy rõ, tab segmented, layered shadow và primary action nổi bật; mobile rút gọn brand để ưu tiên viewport.
 - Responsive cho desktop/mobile/landscape; điều khiển chính tối thiểu 44 px và tăng lên 48 px trên thiết bị coarse-pointer.
 - Test nhiều lớp: unit, integration/contract, E2E Playwright, **axe WCAG A/AA**, **task-based usability guardrails** và visual regression VI/EN × Light/Dark trên desktop/mobile.
@@ -238,11 +258,12 @@ Mô hình nguồn NASA được pin bằng provenance/fingerprint. Pipeline ki�
 - Timeline hỗ trợ reduced-motion.
 - Axe tự động kiểm WCAG A/AA cho VI/EN trên desktop/mobile.
 - Layout không tràn ngang ở desktop/mobile/landscape đã kiểm.
-- Visual regression khóa UI chrome VI/EN × Light/Dark trên desktop/mobile bằng 8 golden snapshots CI-native.
+- Visual regression khóa UI chrome VI/EN × Light/Dark, tab Hướng dẫn và trạng thái selection Normal/Ghost/X-ray trên desktop/mobile bằng **32 golden snapshots CI-native** (8 shell + 8 guide + 16 selection-state).
 - Usability regression giữ 5 tác vụ chính trong cùng Control Center, không yêu cầu cuộn toàn trang và kiểm keyboard path của tablist.
 
-## 📚 Tài liệu kỹ thuật
+## 📚 Tài liệu
 
+- [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) — hướng dẫn sử dụng cho người học/người trình bày
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - [`docs/ASSEMBLY_PIPELINE.md`](docs/ASSEMBLY_PIPELINE.md)
 - [`docs/ASSET_QUALIFICATION.md`](docs/ASSET_QUALIFICATION.md)
@@ -277,8 +298,8 @@ Dự án chỉ phục vụ **trực quan hóa và giáo dục dân sự**. Khôn
 
 ## 🗺️ Hướng phát triển
 
-1. Bật GitHub Pages một lần trong Settings để CD + deployed smoke bắt đầu chạy.
-2. Thực hiện manual accessibility review định kỳ bên cạnh axe automation.
+1. Thực hiện manual accessibility review định kỳ bên cạnh axe automation.
+2. Mở rộng interaction matrix sang kiểm hiệu năng WebGL/khung hình và các trình duyệt bổ sung khi có nhu cầu phát hành rộng hơn.
 3. Thêm một mô hình không gian dân sự thứ hai để kiểm tính tổng quát của viewer/lesson engine.
 4. Tách lesson content thành data file có thể biên tập độc lập nếu số bài học tăng.
 5. Tiếp tục mở rộng annotation/callout nhưng giữ semantic-ID contract.

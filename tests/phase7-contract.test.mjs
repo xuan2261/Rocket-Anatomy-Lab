@@ -41,9 +41,17 @@ test('CI has a pinned-environment visual regression lane', () => {
   assert.match(ci, /name: E2E \+ accessibility Chromium/)
 })
 
-test('CI-native shell and selection-state golden snapshots are committed', () => {
+test('CI-native shell, guide and selection-state golden snapshots are committed', () => {
   const files = fs.readdirSync(snapshotDir).filter(name => name.endsWith('.png')).sort()
   assert.deepEqual(files, [
+    'guide-en-dark-desktop-chromium-linux.png',
+    'guide-en-dark-mobile-chromium-linux.png',
+    'guide-en-light-desktop-chromium-linux.png',
+    'guide-en-light-mobile-chromium-linux.png',
+    'guide-vi-dark-desktop-chromium-linux.png',
+    'guide-vi-dark-mobile-chromium-linux.png',
+    'guide-vi-light-desktop-chromium-linux.png',
+    'guide-vi-light-mobile-chromium-linux.png',
     'selection-center-en-ghost-desktop-chromium-linux.png',
     'selection-center-en-ghost-mobile-chromium-linux.png',
     'selection-center-en-normal-desktop-chromium-linux.png',
@@ -69,6 +77,12 @@ test('CI-native shell and selection-state golden snapshots are committed', () =>
     'shell-vi-light-desktop-chromium-linux.png',
     'shell-vi-light-mobile-chromium-linux.png',
   ])
+})
+
+test('guide visual suite covers VI/EN, light/dark and the help panel', () => {
+  assert.match(visual, /visual guide/)
+  assert.match(visual, /data-control-tab="help"/)
+  assert.match(visual, /guide-\$\{language\}-\$\{theme\}/)
 })
 
 test('selection visual suite covers reload, normal, ghost and xray without runtime errors', () => {
