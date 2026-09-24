@@ -69,7 +69,7 @@ export function setTheme(theme, { persist = true } = {}) {
   })
 
   const themeColor = document.querySelector('meta[name="theme-color"]')
-  if (themeColor) themeColor.setAttribute('content', next === 'dark' ? '#0b1018' : '#f4f7fb')
+  if (themeColor) themeColor.setAttribute('content', next === 'dark' ? '#0a0f16' : '#f6f8fb')
 
   if (persist) {
     try { localStorage.setItem(THEME_KEY, next) } catch {}

@@ -50,7 +50,7 @@ test.describe('Rocket Anatomy Lab — luồng chính', () => {
     await page.locator('[data-theme-value="dark"]').click()
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
     await expect(page.locator('[data-theme-value="dark"]')).toHaveAttribute('aria-pressed', 'true')
-    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#0b1018')
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#0a0f16')
 
     await page.reload()
     await waitForRealAsset(page)
@@ -59,7 +59,7 @@ test.describe('Rocket Anatomy Lab — luồng chính', () => {
     await page.locator('[data-theme-value="light"]').click()
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
     await expect(page.locator('[data-theme-value="light"]')).toHaveAttribute('aria-pressed', 'true')
-    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#f4f7fb')
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#f6f8fb')
   })
 
   test('chọn cụm, tách cụm và điều khiển timeline trong Control Center', async ({ page }) => {
