@@ -17,10 +17,10 @@ test('viewer theme and selection clarity stay synchronized across DOM and Three.
 
   assert.match(workspace, /rocket-anatomy:themechange/)
   assert.match(realApp, /applyViewerTheme/)
-  assert.match(realApp, /new THREE\.Box3Helper/)
+  assert.doesNotMatch(realApp, /new THREE\.Box3Helper/)
   assert.match(realApp, /viewerSelectionEmissive/)
   assert.match(realApp, /data-selected-assembly|selectedAssembly/)
   assert.doesNotMatch(realApp, /scene\.background\s*=\s*new THREE\.Color\(0x0b111a\)/)
 
-  assert.match(semantic, /if \(hasSelection\)[\s\S]*return selected \? 1 : 0\.52/)
+  assert.doesNotMatch(semantic, /return selected \? 1 : 0\.52/)
 })
