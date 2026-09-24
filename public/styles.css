@@ -542,6 +542,40 @@ h1 {
   line-height: 1.25;
 }
 .anatomy-real-detail-card .primary-action { width: 100%; }
+.real-detail-parts-wrap {
+  display: grid;
+  gap: 8px;
+}
+.real-detail-parts-wrap[hidden] { display: none; }
+.real-detail-parts-list {
+  display: grid;
+  gap: 6px;
+}
+.real-detail-part-button {
+  width: 100%;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 9px;
+  text-align: left;
+  background: var(--control);
+  font-size: 12px;
+}
+.real-detail-part-button::after {
+  content: '●';
+  color: var(--accent);
+  font-size: 10px;
+}
+.real-detail-part-button[aria-pressed="false"] {
+  color: var(--muted);
+  border-style: dashed;
+}
+.real-detail-part-button[aria-pressed="false"]::after {
+  content: '○';
+  color: var(--muted);
+}
 .anatomy-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
 .tree { display: grid; gap: 6px; }
@@ -808,7 +842,8 @@ dt { color: var(--muted); } dd { margin: 0; font-weight: 700; }
   .anatomy-search input,
   .anatomy-reference-marker,
   .schematic-detail-heading button,
-  .anatomy-real-detail-card .primary-action {
+  .anatomy-real-detail-card .primary-action,
+  .real-detail-part-button {
     min-height: 48px;
   }
 
