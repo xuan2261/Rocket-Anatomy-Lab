@@ -981,6 +981,7 @@ resetBtn.addEventListener('click', () => {
   proceduralDetailLayer?.setVisible(false)
   proceduralDetailLayer?.setExplode(0)
   void realDetailLoader?.resetAll?.()
+  anatomyController?.resetRealDetailControls?.()
   renderUiAndModel()
   if (overviewCamera) setCameraPose(overviewCamera.position, overviewCamera.target)
 })
