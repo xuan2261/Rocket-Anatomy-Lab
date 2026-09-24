@@ -9,6 +9,8 @@ import {
 import {
   anatomyNodeIdFromSearch,
   anatomySearch,
+  detailInspectorSearch,
+  detailInspectorStateFromSearch,
   filterAnatomyNodes,
   structureModeFromSearch,
 } from './core/anatomyNavigation.js'
@@ -22,6 +24,12 @@ export function createAnatomyController({
   onLoadRealDetail = async () => false,
   onSetRealDetailExplode = async () => false,
   onSetRealDetailPartVisible = async () => false,
+  onSelectRealDetailPart = () => false,
+  onHoverRealDetailPart = () => false,
+  onFocusRealDetailPart = () => false,
+  onGhostOtherRealDetailParts = async () => false,
+  onShowOnlyRealDetailPart = async () => false,
+  getRealDetailPartStats = () => null,
   getReferenceAnchor = () => null,
 } = {}) {
   const errors = validateAnatomyManifest(saturnVAnatomyManifest)
@@ -59,6 +67,17 @@ export function createAnatomyController({
   const realDetailPartsWrap = document.querySelector('#anatomyRealDetailPartsWrap')
   const realDetailPartsList = document.querySelector('#anatomyRealDetailPartsList')
   const realDetailExplodeSlider = document.querySelector('#anatomyRealDetailExplodeSlider')
+  const partInspector = document.querySelector('#anatomyPartInspector')
+  const partInspectorTitle = document.querySelector('#anatomyPartInspectorTitle')
+  const partBreadcrumbs = document.querySelector('#anatomyPartBreadcrumbs')
+  const partFocusBtn = document.querySelector('#anatomyPartFocusBtn')
+  const partGhostBtn = document.querySelector('#anatomyPartGhostBtn')
+  const partOnlyBtn = document.querySelector('#anatomyPartOnlyBtn')
+  const partMeshCount = document.querySelector('#anatomyPartMeshCount')
+  const partTriangleCount = document.querySelector('#anatomyPartTriangleCount')
+  const partDrawCalls = document.querySelector('#anatomyPartDrawCalls')
+  const partBounds = document.querySelector('#anatomyPartBounds')
+  const partProvenance = document.querySelector('#anatomyPartProvenance')
 
   let mode = structureModeFromSearch(location.search, nodeIds)
   let currentId = deepLinkedId ?? saturnVAnatomyManifest.rootId
@@ -70,6 +89,10 @@ export function createAnatomyController({
   const failedDetailNodes = new Set()
   const detailExplodeByNode = new Map()
   const detailPartVisibilityByNode = new Map()
+  const selectedDetailPartByNode = new Map()
+  const hoveredDetailPartByNode = new Map()
+  const ghostOtherPartsByNode = new Map()
+  const onlyPartByNode = new Map()
 
   const current = () => anatomyNodeById(saturnVAnatomyManifest, currentId)
   const localized = value => anatomyText(value, getLanguage())
@@ -77,7 +100,28 @@ export function createAnatomyController({
   const syncUrl = ({ push = false } = {}) => {
     try {
       const url = new URL(location.href)
-      url.search = anatomySearch(url.search, currentId, nodeIds, mode, getLanguage())
+      let search = anatomySearch(url.search, currentId, nodeIds, mode, getLanguage())
+      const item = current()
+      const detail = item ? detailAssetForNode(item.id) : null
+      if (detail?.sourceKind === 'generated-stl-package') {
+        const visibility = detailPartVisibilityByNode.get(item.id) ?? new Map()
+        search = detailInspectorSearch(search, {
+          partId: selectedDetailPartByNode.get(item.id) ?? null,
+          explode: detailExplodeByNode.get(item.id) ?? 0,
+          hiddenPartIds: detail.sourceParts.filter(part => visibility.get(part.id) === false).map(part => part.id),
+          ghostOthers: ghostOtherPartsByNode.get(item.id) === true,
+          onlyPart: onlyPartByNode.get(item.id) === true,
+        })
+      } else {
+        search = detailInspectorSearch(search, {
+          partId: null,
+          explode: 0,
+          hiddenPartIds: [],
+          ghostOthers: false,
+          onlyPart: false,
+        })
+      }
+      url.search = search
       if (url.href === location.href) return
       const method = push ? 'pushState' : 'replaceState'
       history[method](history.state, '', url)
