@@ -37,6 +37,18 @@ for (const language of ['vi', 'en']) {
           anatomyResults.violations,
           `${language}/anatomy: ${anatomyResults.violations.map(v => v.id).join(', ')}`,
         ).toEqual([])
+
+        await page.locator('[data-anatomy-id="apollo-spacecraft"]').click()
+        await page.locator('[data-anatomy-id="apollo-lm-sla"]').click()
+        await expect(page.locator('#anatomyRealDetailCard')).toBeVisible()
+        const realDetailCardResults = await new AxeBuilder({ page })
+          .withTags(WCAG_AA_TAGS)
+          .analyze()
+        expect(
+          realDetailCardResults.violations,
+          `${language}/anatomy-real-detail: ${realDetailCardResults.violations.map(v => v.id).join(', ')}`,
+        ).toEqual([])
+
         await page.locator('[data-structure-mode="model"]').click()
       }
     }
