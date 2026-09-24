@@ -980,7 +980,7 @@ resetBtn.addEventListener('click', () => {
   schematicDetailExplode = 0
   proceduralDetailLayer?.setVisible(false)
   proceduralDetailLayer?.setExplode(0)
-  void realDetailLoader?.hideAll?.()
+  void realDetailLoader?.resetAll?.()
   renderUiAndModel()
   if (overviewCamera) setCameraPose(overviewCamera.position, overviewCamera.target)
 })
@@ -1111,6 +1111,8 @@ anatomyController = createAnatomyController({
   onFocusReference: node => focusAnatomyReference(node),
   onInspectReference: node => focusAnatomyReference(node, { inspect: true }),
   onLoadRealDetail: node => loadRealDetailForAnatomy(node),
+  onSetRealDetailExplode: (node, amount) => realDetailLoader?.setExplode?.(node.id, amount) ?? false,
+  onSetRealDetailPartVisible: (node, partId, visible) => realDetailLoader?.setPartVisible?.(node.id, partId, visible) ?? false,
   getReferenceAnchor: anatomyReferenceAnchor,
 })
 renderUiAndModel()
