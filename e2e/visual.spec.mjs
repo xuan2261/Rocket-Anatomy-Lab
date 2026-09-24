@@ -18,6 +18,20 @@ async function stableScreenshot(page, name) {
   })
 }
 
+async function stableGuideScreenshot(page, name) {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.locator('[data-control-tab="help"]').click()
+  await expect(page.locator('#paneHelp')).toBeVisible()
+
+  await expect(page).toHaveScreenshot(name, {
+    fullPage: true,
+    animations: 'disabled',
+    caret: 'hide',
+    mask: [page.locator('#viewport'), page.locator('#annotationLayer')],
+    maxDiffPixelRatio: 0.001,
+  })
+}
+
 for (const theme of ['light', 'dark']) {
   test(`visual shell — VI ${theme} @visual`, async ({ page }) => {
     await page.goto('/?renderer=fallback&lang=vi')
@@ -34,6 +48,16 @@ for (const theme of ['light', 'dark']) {
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
     await stableScreenshot(page, `shell-en-${theme}.png`)
   })
+
+  for (const language of ['vi', 'en']) {
+    test(`visual guide — ${language.toUpperCase()} ${theme} @visual`, async ({ page }) => {
+      await page.goto(`/?renderer=fallback&lang=${language}`)
+      await waitForDeterministicShell(page)
+      await page.locator(`[data-theme-value="${theme}"]`).click()
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
+      await stableGuideScreenshot(page, `guide-${language}-${theme}.png`)
+    })
+  }
 }
 
 
