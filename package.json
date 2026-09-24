@@ -7,7 +7,7 @@
     "build": "tsc -p tsconfig.json",
     "test": "node --test tests/*.test.mjs",
     "verify": "npm run build && npm test && npm run check:modules && npm run qualify:semantic && npm run qualify:assembly",
-    "check:modules": "node --check public/i18n.mjs && node --check public/workspace-ui.mjs && node --check public/learning-controller.mjs && node --check public/anatomy-controller.mjs && node --check public/procedural-detail-layer.mjs && node --check public/bootstrap.mjs && node --check public/real-app.mjs && node --check public/fallback-app.mjs && node --check scripts/lib/assembly-glb.mjs && node --check scripts/lib/source-intake.mjs && node --check scripts/intake-source-glb.mjs && node --check scripts/reauthor-assembly-glb.mjs && node --check scripts/qualify-assembly-glb.mjs && node --check scripts/phase3b-real-asset-gate.mjs && node --check scripts/fetch-official-source.mjs && node --check public/timeline-controller.mjs && node --check scripts/serve-local.mjs && node --check public/section-controller.mjs && node --check scripts/smoke-deployed.mjs",
+    "check:modules": "node --check public/i18n.mjs && node --check public/workspace-ui.mjs && node --check public/learning-controller.mjs && node --check public/anatomy-controller.mjs && node --check public/procedural-detail-layer.mjs && node --check public/real-detail-loader.mjs && node --check public/bootstrap.mjs && node --check public/real-app.mjs && node --check public/fallback-app.mjs && node --check scripts/lib/assembly-glb.mjs && node --check scripts/lib/source-intake.mjs && node --check scripts/intake-source-glb.mjs && node --check scripts/reauthor-assembly-glb.mjs && node --check scripts/qualify-assembly-glb.mjs && node --check scripts/phase3b-real-asset-gate.mjs && node --check scripts/fetch-official-source.mjs && node --check public/timeline-controller.mjs && node --check scripts/serve-local.mjs && node --check public/section-controller.mjs && node --check scripts/smoke-deployed.mjs && node --check scripts/fetch-detail-assets.mjs",
     "qualify:semantic": "node scripts/qualify-curated-map.mjs",
     "build:assembly": "node scripts/reauthor-assembly-glb.mjs",
     "qualify:assembly": "node --test tests/assembly-glb.test.mjs tests/phase3-contract.test.mjs",
@@ -24,7 +24,7 @@
     "test:e2e": "playwright test --grep-invert @visual",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:report": "playwright show-report",
-    "verify:ci": "npm run build && npm run fetch:source && npm run verify:phase7 && npm run qualify:anatomy && npm run qualify:anatomy-navigation && npm run qualify:procedural-detail && npm run check:localization",
+    "verify:ci": "npm run build && npm run fetch:source && npm run fetch:detail-assets && npm run verify:phase7 && npm run qualify:anatomy && npm run qualify:anatomy-navigation && npm run qualify:procedural-detail && npm run qualify:real-detail && npm run check:localization",
     "check:localization": "node scripts/check-i18n-ui.mjs",
     "test:all": "npm run verify:ci && npm run test:e2e && npm run test:visual",
     "qualify:learning": "node --test tests/learning.test.mjs tests/phase6-contract.test.mjs",
@@ -41,7 +41,10 @@
     "qualify:anatomy-navigation": "node --test tests/anatomy-navigation.test.mjs tests/phase13-contract.test.mjs",
     "verify:phase13": "npm run verify:phase12 && npm run qualify:anatomy-navigation",
     "qualify:procedural-detail": "node --test tests/phase14-contract.test.mjs",
-    "verify:phase14": "npm run verify:phase13 && npm run qualify:procedural-detail"
+    "verify:phase14": "npm run verify:phase13 && npm run qualify:procedural-detail",
+    "fetch:detail-assets": "node scripts/fetch-detail-assets.mjs",
+    "qualify:real-detail": "node --test tests/detail-assets.test.mjs tests/phase15-contract.test.mjs",
+    "verify:phase15": "npm run verify:phase14 && npm run qualify:real-detail"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
