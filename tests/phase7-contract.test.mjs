@@ -37,7 +37,7 @@ test('visual suite stabilizes motion and masks WebGL-only variability', () => {
 test('CI has a pinned-environment visual regression lane', () => {
   assert.match(ci, /name: Visual regression/)
   assert.match(ci, /runs-on: ubuntu-24\.04/)
-  assert.match(ci, /npm run test:visual/)
+  assert.match(ci, /name: Visual regression[\s\S]*npm run verify:ci[\s\S]*npm run test:visual/)
   assert.match(ci, /name: E2E \+ accessibility Chromium/)
 })
 
