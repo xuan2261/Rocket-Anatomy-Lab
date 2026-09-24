@@ -22,6 +22,7 @@ import { createSectionController } from './section-controller.mjs'
 import { createLearningController } from './learning-controller.mjs'
 import { createAnatomyController } from './anatomy-controller.mjs'
 import { anatomyCameraScale } from './core/anatomyNavigation.js'
+import { createProceduralDetailLayer } from './procedural-detail-layer.mjs'
 import { entityDescription, entityLabel, onLanguageChange, t } from './i18n.mjs'
 
 const EDUCATION_ASSET = './assets/saturn-v-education.glb'
@@ -40,6 +41,9 @@ const hideBtn = document.querySelector('#hideBtn')
 const showAllBtn = document.querySelector('#showAllBtn')
 const explodeSlider = document.querySelector('#explodeSlider')
 const inspectInsideBtn = document.querySelector('#inspectInsideBtn')
+const schematicDetailBtn = document.querySelector('#schematicDetailBtn')
+const schematicExplodeSlider = document.querySelector('#schematicExplodeSlider')
+const schematicDetailStatus = document.querySelector('#schematicDetailStatus')
 const resetBtn = document.querySelector('#resetBtn')
 const modeChip = document.querySelector('#modeChip')
 const modeButtons = [...document.querySelectorAll('[data-mode]')]
@@ -64,6 +68,9 @@ let overviewCamera = null
 let sectionController = null
 let learningController = null
 let anatomyController = null
+let proceduralDetailLayer = null
+let schematicDetailVisible = false
+let schematicDetailExplode = 0
 let sectionState = null
 let sectionModelBox = null
 let sectionCapMesh = null
@@ -400,6 +407,7 @@ function updateSectionCutaway(nextState) {
   sectionPlane.constant = descriptor.constant
   const enabled = nextState.enabled
   applySectionMaterialClipping(enabled)
+  proceduralDetailLayer?.setSectionEnabled?.(enabled)
   const capped = enabled && nextState.capped && sectionCappingSupported
   for (const stencil of sectionStencilMeshes) stencil.visible = capped
   if (sectionCapMesh) {
@@ -605,6 +613,10 @@ function focusAnatomyReference(node, { inspect = false } = {}) {
   state = selectPart(state, node.focusAssemblyId)
 
   if (inspect) {
+    schematicDetailVisible = true
+    schematicDetailExplode = Math.max(schematicDetailExplode, 0.18)
+    proceduralDetailLayer?.setVisible(true)
+    proceduralDetailLayer?.setExplode(schematicDetailExplode)
     state = setMode(state, 'xray')
     sectionController?.applyPreset?.({
       enabled: true,
@@ -815,6 +827,21 @@ function renderInspector() {
   hideBtn.textContent = t(group && state.hiddenIds.has(group.id) ? 'inspector.show' : 'inspector.hide')
   modeChip.textContent = modeValue.textContent
   modeButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.mode === state.mode)))
+  if (schematicDetailBtn) {
+    schematicDetailBtn.setAttribute('aria-pressed', String(schematicDetailVisible))
+    schematicDetailBtn.textContent = t(schematicDetailVisible ? 'detail.hide' : 'detail.show')
+  }
+  if (schematicExplodeSlider) {
+    schematicExplodeSlider.disabled = !schematicDetailVisible || !proceduralDetailLayer
+    schematicExplodeSlider.value = String(Math.round(schematicDetailExplode * 100))
+  }
+  if (schematicDetailStatus) {
+    if (!schematicDetailVisible || !proceduralDetailLayer) schematicDetailStatus.textContent = t('detail.off')
+    else {
+      const count = proceduralDetailLayer.stats().totalReferenceObjects
+      schematicDetailStatus.textContent = t('detail.on', { count, percent: Math.round(schematicDetailExplode * 100) })
+    }
+  }
 }
 
 function renderUiAndModel() {
@@ -830,6 +857,10 @@ modeButtons.forEach(button => button.addEventListener('click', () => {
 
 inspectInsideBtn?.addEventListener('click', () => {
   cancelPresentationMotion()
+  schematicDetailVisible = true
+  schematicDetailExplode = Math.max(schematicDetailExplode, 0.18)
+  proceduralDetailLayer?.setVisible(true)
+  proceduralDetailLayer?.setExplode(schematicDetailExplode)
   timelineController?.resetSilently?.()
   timelineMode = false
   state = setMode(state, 'xray')
@@ -847,6 +878,22 @@ inspectInsideBtn?.addEventListener('click', () => {
     focusCameraOnGroup(state.selectedId, reducedMotion ? 0 : 420)
   }
   renderUiAndModel()
+})
+
+schematicDetailBtn?.addEventListener('click', () => {
+  if (!proceduralDetailLayer) return
+  schematicDetailVisible = !schematicDetailVisible
+  proceduralDetailLayer.setVisible(schematicDetailVisible)
+  renderInspector()
+})
+
+schematicExplodeSlider?.addEventListener('input', () => {
+  if (!proceduralDetailLayer) return
+  schematicDetailVisible = true
+  schematicDetailExplode = Number(schematicExplodeSlider.value) / 100
+  proceduralDetailLayer.setVisible(true)
+  proceduralDetailLayer.setExplode(schematicDetailExplode)
+  renderInspector()
 })
 
 explodeSlider.addEventListener('input', () => {
@@ -881,6 +928,10 @@ resetBtn.addEventListener('click', () => {
   timelineMode = false
   state = resetViewer()
   explodeSlider.value = '0'
+  schematicDetailVisible = false
+  schematicDetailExplode = 0
+  proceduralDetailLayer?.setVisible(false)
+  proceduralDetailLayer?.setExplode(0)
   renderUiAndModel()
   if (overviewCamera) setCameraPose(overviewCamera.position, overviewCamera.target)
 })
@@ -939,6 +990,7 @@ window.addEventListener('pagehide', () => {
   timelineController?.destroy?.()
   learningController?.destroy?.()
   anatomyController?.destroy?.()
+  proceduralDetailLayer?.dispose?.()
   unsubscribeLanguage()
   sectionController?.destroy?.()
   resizeObserver.disconnect()
@@ -968,6 +1020,8 @@ window.addEventListener('pagehide', () => {
 }, { once: true })
 
 await loadModel()
+proceduralDetailLayer = createProceduralDetailLayer({ modelBox: sectionModelBox, sectionPlane })
+scene.add(proceduralDetailLayer.root)
 createSectionCutaway()
 sectionController = createSectionController({
   disabled: false,
