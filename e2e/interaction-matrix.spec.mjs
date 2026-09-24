@@ -45,23 +45,32 @@ async function pickFocusedAssemblyFromViewport(page, assemblyId, otherAssemblyId
   await openPanel(page, 'objects')
   await selectFromTree(page, otherAssemblyId)
 
+  // Keep the target as the only visible assembly so the test validates the
+  // real canvas/raycaster path without being nondeterministic when another
+  // assembly occludes it from the current camera direction.
+  for (const id of ASSEMBLIES) {
+    if (id === assemblyId) continue
+    const checkbox = page.locator(`#tree [data-assembly-id="${id}"] input[type="checkbox"]`)
+    if (await checkbox.isChecked()) await checkbox.uncheck()
+  }
+
   const canvas = page.locator('#viewport')
   const box = await canvas.boundingBox()
   expect(box).not.toBeNull()
 
-  const offsets = [
-    [0, 0],
-    [-18, 0], [18, 0], [0, -18], [0, 18],
-    [-36, 0], [36, 0], [0, -36], [0, 36],
-    [-24, -24], [24, -24], [-24, 24], [24, 24],
-    [-48, -24], [48, -24], [-48, 24], [48, 24],
-  ]
+  const offsets = []
+  for (const dy of [0, -24, 24, -48, 48, -72, 72, -96, 96]) {
+    for (const dx of [0, -24, 24, -48, 48, -72, 72, -96, 96]) offsets.push([dx, dy])
+  }
 
   for (const [dx, dy] of offsets) {
     const x = Math.min(box.x + box.width - 2, Math.max(box.x + 2, box.x + box.width / 2 + dx))
     const y = Math.min(box.y + box.height - 2, Math.max(box.y + 2, box.y + box.height / 2 + dy))
     await page.mouse.click(x, y)
-    if (await canvas.getAttribute('data-selected-assembly') === assemblyId) return
+    if (await canvas.getAttribute('data-selected-assembly') === assemblyId) {
+      await page.locator('#showAllBtn').click()
+      return
+    }
   }
 
   await expect(canvas).toHaveAttribute('data-selected-assembly', assemblyId)
