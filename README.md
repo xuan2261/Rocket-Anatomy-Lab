@@ -258,7 +258,7 @@ Mô hình nguồn NASA được pin bằng provenance/fingerprint. Pipeline ki�
 - Timeline hỗ trợ reduced-motion.
 - Axe tự động kiểm WCAG A/AA cho VI/EN trên desktop/mobile.
 - Layout không tràn ngang ở desktop/mobile/landscape đã kiểm.
-- Visual regression khóa UI chrome VI/EN × Light/Dark và trạng thái selection Normal/Ghost/X-ray trên desktop/mobile bằng **24 golden snapshots CI-native** (8 shell + 16 selection-state).
+- Visual regression khóa UI chrome VI/EN × Light/Dark, tab Hướng dẫn và trạng thái selection Normal/Ghost/X-ray trên desktop/mobile bằng **32 golden snapshots CI-native** (8 shell + 8 guide + 16 selection-state).
 - Usability regression giữ 5 tác vụ chính trong cùng Control Center, không yêu cầu cuộn toàn trang và kiểm keyboard path của tablist.
 
 ## 📚 Tài liệu
@@ -299,7 +299,7 @@ Dự án chỉ phục vụ **trực quan hóa và giáo dục dân sự**. Khôn
 ## 🗺️ Hướng phát triển
 
 1. Thực hiện manual accessibility review định kỳ bên cạnh axe automation.
-2. Mở rộng interaction regression cho toàn bộ 5 cụm, gồm click trực tiếp trên WebGL, hide/show/isolate, explode và deep-link.
+2. Mở rộng interaction matrix sang kiểm hiệu năng WebGL/khung hình và các trình duyệt bổ sung khi có nhu cầu phát hành rộng hơn.
 3. Thêm một mô hình không gian dân sự thứ hai để kiểm tính tổng quát của viewer/lesson engine.
 4. Tách lesson content thành data file có thể biên tập độc lập nếu số bài học tăng.
 5. Tiếp tục mở rộng annotation/callout nhưng giữ semantic-ID contract.
