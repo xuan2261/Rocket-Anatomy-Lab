@@ -87,8 +87,10 @@ export function createRealDetailLoader({ scene, modelBox, sectionPlane }) {
   }
 
   const fitToAnchor = (root, asset) => {
-    root.updateWorldMatrix(true, true)
-    const sourceBox = new THREE.Box3().setFromObject(root, true)
+    // Package placement only needs a stable aggregate bound. Keep precise bounds
+    // for individual inspector parts, where the additional traversal is useful.
+    root.updateMatrixWorld(true)
+    const sourceBox = new THREE.Box3().setFromObject(root)
     if (sourceBox.isEmpty()) throw new Error(`${asset.id}: loaded detail asset has empty bounds`)
     const sourceSize = sourceBox.getSize(new THREE.Vector3())
     const sourceExtent = Math.max(sourceSize.x, sourceSize.y, sourceSize.z)
@@ -97,14 +99,14 @@ export function createRealDetailLoader({ scene, modelBox, sectionPlane }) {
     const targetExtent = modelExtent * asset.fit.targetSizeNormalized
     const scale = targetExtent / sourceExtent
     root.scale.setScalar(scale)
-    root.updateWorldMatrix(true, true)
+    root.updateMatrixWorld(true)
 
-    const scaledBox = new THREE.Box3().setFromObject(root, true)
+    const scaledBox = new THREE.Box3().setFromObject(root)
     const scaledCenter = scaledBox.getCenter(new THREE.Vector3())
     const targetCenter = modelCenter.clone()
     targetCenter.y = THREE.MathUtils.lerp(modelBox.min.y, modelBox.max.y, asset.fit.centerNormalized)
     root.position.add(targetCenter.sub(scaledCenter))
-    root.updateWorldMatrix(true, true)
+    root.updateMatrixWorld(true)
   }
 
   const tagDetail = (root, asset) => {
