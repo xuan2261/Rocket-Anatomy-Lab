@@ -7,6 +7,7 @@ import { nasaSaturnVAssemblyManifest, nasaSaturnVAssemblySemanticManifest } from
 import { createTimelineController } from './timeline-controller.mjs'
 import { createSectionController } from './section-controller.mjs'
 import { createLearningController } from './learning-controller.mjs'
+import { createAnatomyController } from './anatomy-controller.mjs'
 import { entityDescription, entityLabel, onLanguageChange, t } from './i18n.mjs'
 
 const canvas = document.querySelector('#viewport')
@@ -46,6 +47,9 @@ const sectionController = createSectionController({
   cappingSupported: false,
 })
 const learningController = createLearningController({
+  disabled: true,
+})
+const anatomyController = createAnatomyController({
   disabled: true,
 })
 
@@ -226,4 +230,4 @@ render()
 
 canvas.addEventListener('pointercancel',()=>{dragging=false;lastPointer=null;pointerStart=null})
 
-window.addEventListener('pagehide', () => { timelineController.destroy(); sectionController.destroy(); learningController.destroy(); unsubscribeLanguage() }, { once: true })
+window.addEventListener('pagehide', () => { timelineController.destroy(); sectionController.destroy(); learningController.destroy(); anatomyController.destroy(); unsubscribeLanguage() }, { once: true })
