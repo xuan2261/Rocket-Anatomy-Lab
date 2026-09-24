@@ -486,6 +486,9 @@ function updateSelectionState() {
     && (!state.isolatedId || state.isolatedId === selectedId)
 
   canvas.dataset.selectedAssembly = visibleSelection ? selectedId : ''
+  canvas.dataset.isolatedAssembly = state.isolatedId ?? ''
+  canvas.dataset.viewMode = state.mode
+  canvas.dataset.explodePercent = String(Math.round(state.explode * 100))
 }
 
 function applyStateToModel(amountOverride = null) {
@@ -891,6 +894,7 @@ function renderTree() {
   for (const group of manifest.groups) {
     const row = document.createElement('div')
     row.className = 'tree-row'
+    row.dataset.assemblyId = group.id
     row.dataset.selected = String(state.selectedId === group.id)
     row.setAttribute('role', 'treeitem')
     row.setAttribute('aria-selected', String(state.selectedId === group.id))
