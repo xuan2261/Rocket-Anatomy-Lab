@@ -21,6 +21,7 @@ import { sectionPlaneDescriptor } from './core/section.js'
 import { createSectionController } from './section-controller.mjs'
 import { createLearningController } from './learning-controller.mjs'
 import { createAnatomyController } from './anatomy-controller.mjs'
+import { anatomyCameraScale } from './core/anatomyNavigation.js'
 import { entityDescription, entityLabel, onLanguageChange, t } from './i18n.mjs'
 
 const EDUCATION_ASSET = './assets/saturn-v-education.glb'
@@ -554,6 +555,47 @@ function focusCameraOnGroup(groupId, durationMs) {
   startCameraTransition(sphere.center.clone().add(direction.multiplyScalar(distance)), sphere.center, durationMs)
 }
 
+function anatomyReferencePoint(node) {
+  if (!sectionModelBox || !node) return null
+  const point = sectionModelBox.getCenter(new THREE.Vector3())
+  point.y = THREE.MathUtils.lerp(sectionModelBox.min.y, sectionModelBox.max.y, node.normalizedPosition)
+  return point
+}
+
+function focusCameraOnReference(node, durationMs) {
+  const roots = groupedNodes.get(node?.focusAssemblyId) ?? []
+  if (!roots.length) return
+  const box = new THREE.Box3()
+  for (const root of roots) box.expandByObject(root)
+  if (box.isEmpty()) return
+
+  const sphere = box.getBoundingSphere(new THREE.Sphere())
+  const target = anatomyReferencePoint(node) ?? sphere.center.clone()
+  const radius = Math.max(sphere.radius * anatomyCameraScale(node), 0.01)
+  const fov = THREE.MathUtils.degToRad(camera.fov)
+  const distance = radius / Math.sin(fov / 2) * 1.45
+  const direction = camera.position.clone().sub(controls.target)
+  if (direction.lengthSq() < 1e-8) direction.set(1, 0.65, 1.25)
+  direction.normalize()
+  startCameraTransition(target.clone().add(direction.multiplyScalar(distance)), target, durationMs)
+}
+
+function anatomyReferenceAnchor(node) {
+  if (!model || !node?.focusAssemblyId) return null
+  if (state.hiddenIds.has(node.focusAssemblyId)) return null
+  if (state.isolatedId && state.isolatedId !== node.focusAssemblyId) return null
+
+  const point = anatomyReferencePoint(node)
+  if (!point) return null
+  point.project(camera)
+  if (point.z < -1 || point.z > 1) return null
+  const rect = canvas.getBoundingClientRect()
+  return {
+    x: (point.x * 0.5 + 0.5) * rect.width,
+    y: (-point.y * 0.5 + 0.5) * rect.height,
+    visible: point.x >= -1.15 && point.x <= 1.15 && point.y >= -1.15 && point.y <= 1.15,
+  }
+}
 
 function focusAnatomyReference(node, { inspect = false } = {}) {
   if (!node?.focusAssemblyId || rendererKind !== 'assembly') return
@@ -574,7 +616,7 @@ function focusAnatomyReference(node, { inspect = false } = {}) {
   }
 
   const reducedMotion = timelineController?.getState?.().reducedMotion === true
-  focusCameraOnGroup(node.focusAssemblyId, reducedMotion ? 0 : 420)
+  focusCameraOnReference(node, reducedMotion ? 0 : 420)
   renderUiAndModel()
 }
 
@@ -881,6 +923,7 @@ function animate(now = performance.now()) {
   controls.update()
   renderer.render(scene, camera)
   learningController?.updateAnnotations?.()
+  anatomyController?.updateReferenceMarker?.()
   frameId = requestAnimationFrame(animate)
 }
 animate()
@@ -962,6 +1005,7 @@ anatomyController = createAnatomyController({
   disabled: rendererKind !== 'assembly',
   onFocusReference: node => focusAnatomyReference(node),
   onInspectReference: node => focusAnatomyReference(node, { inspect: true }),
+  getReferenceAnchor: anatomyReferenceAnchor,
 })
 renderUiAndModel()
 learningController.updateAnnotations()
