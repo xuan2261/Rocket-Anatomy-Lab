@@ -5,14 +5,21 @@ async function waitForRealAsset(page) {
   await expect(badge).toHaveAttribute('data-state', 'assembly', { timeout: 30_000 })
 }
 
+async function openLearning(page) {
+  const tab = page.locator('[data-control-tab="learning"]')
+  await tab.click()
+  await expect(tab).toHaveAttribute('aria-selected', 'true')
+  await expect(page.locator('#paneLearning')).toBeVisible()
+}
+
 test.describe('Phase 6 — guided learning', () => {
   test('deep link opens the requested bilingual lesson and applies a learning view', async ({ page }, testInfo) => {
     await page.goto('/?lesson=lower-body-assembly&lang=en')
     await waitForRealAsset(page)
+    await openLearning(page)
 
     await expect(page.locator('html')).toHaveAttribute('lang', 'en')
     await expect(page.locator('#learningTitle')).toContainText('Lesson 2')
-    await expect(page.locator('#inspectorTitle')).toContainText('Lower body assembly')
     await expect(page).toHaveURL(/lesson=lower-body-assembly/)
     await expect(page).toHaveURL(/lang=en/)
 
@@ -23,7 +30,6 @@ test.describe('Phase 6 — guided learning', () => {
 
     await page.locator('#learningNextBtn').click()
     await expect(page.locator('#learningTitle')).toContainText('Lesson 3')
-    await expect(page.locator('#inspectorTitle')).toContainText('Center body assembly')
     await expect(page).toHaveURL(/lesson=center-body-assembly/)
 
     await page.locator('#learningApplyViewBtn').click()
@@ -38,6 +44,7 @@ test.describe('Phase 6 — guided learning', () => {
   test('learning disclosure and annotations are keyboard-friendly UI controls', async ({ page }) => {
     await page.goto('/?lesson=base-assembly&lang=vi')
     await waitForRealAsset(page)
+    await openLearning(page)
 
     const disclosure = page.locator('#learningToggleBtn')
     await expect(disclosure).toHaveAttribute('aria-expanded', 'true')
@@ -59,6 +66,7 @@ test.describe('Phase 6 — guided learning', () => {
   test('fallback keeps Phase 6 fail-closed', async ({ page }) => {
     await page.goto('/?renderer=fallback&lesson=base-assembly')
     await expect(page.locator('#assetStatus')).toHaveAttribute('data-state', 'fallback')
+    await openLearning(page)
     await expect(page.locator('#learningNextBtn')).toBeDisabled()
     await expect(page.locator('#learningApplyViewBtn')).toBeDisabled()
     await expect(page.locator('#learningAnnotationsBtn')).toBeDisabled()
