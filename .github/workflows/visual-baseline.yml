@@ -1,0 +1,36 @@
+name: Generate visual baselines
+
+on:
+  push:
+    branches: [chore/phase7-quality-hardening]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: visual-baseline-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  baseline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package.json
+      - run: npm install --no-fund --no-audit
+      - run: npx playwright install --with-deps chromium
+      - run: npm run verify:ci
+      - name: Generate CI-native visual baselines
+        run: npm run test:visual:update
+      - name: Upload visual baselines
+        uses: actions/upload-artifact@v7
+        with:
+          name: phase7-visual-baselines
+          path: e2e/visual.spec.mjs-snapshots/
+          if-no-files-found: error
+          retention-days: 7
