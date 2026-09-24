@@ -1,0 +1,76 @@
+name: Cleanup merged branches
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/cleanup-stale-branches.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cleanup-stale-branches
+  cancel-in-progress: true
+
+jobs:
+  cleanup:
+    name: Verify and remove merged branches
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Verify branches contain no commits outside main
+        shell: bash
+        run: |
+          set -euo pipefail
+          branches=(
+            "chore/phase7-quality-hardening"
+            "chore/update-github-actions"
+            "docs/github-pages-live-guide"
+            "feat/bilingual-ui-title"
+            "feat/initialize-vietnamese-app"
+            "feat/phase6-guided-learning"
+          )
+          git fetch origin main
+          for branch in "${branches[@]}"; do
+            if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+              git fetch origin "$branch:refs/remotes/origin/$branch"
+              if ! git merge-base --is-ancestor "origin/$branch" origin/main; then
+                echo "::error::$branch contains commits not present in main"
+                exit 1
+              fi
+            fi
+          done
+
+      - name: Delete verified merged branches
+        shell: bash
+        run: |
+          set -euo pipefail
+          branches=(
+            "chore/phase7-quality-hardening"
+            "chore/update-github-actions"
+            "docs/github-pages-live-guide"
+            "feat/bilingual-ui-title"
+            "feat/initialize-vietnamese-app"
+            "feat/phase6-guided-learning"
+          )
+          for branch in "${branches[@]}"; do
+            if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+              git push origin --delete "$branch"
+            fi
+          done
+
+      - name: Remove one-time cleanup workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/cleanup-stale-branches.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/cleanup-stale-branches.yml
+          git commit -m "chore(repo): remove one-time branch cleanup workflow"
+          git push origin HEAD:main
