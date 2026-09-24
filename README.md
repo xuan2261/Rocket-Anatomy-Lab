@@ -10,6 +10,8 @@
 
 > Các cụm trong ứng dụng là **vùng hình học phục vụ hiển thị** được tái cấu trúc từ mô hình nguồn. Chúng **không phải ranh giới tầng lịch sử** và không phải hướng dẫn lắp ráp ngoài đời thực.
 
+> Chế độ **Giải phẫu NASA** là lớp kiến thức tham chiếu tách biệt: tên tầng/hệ thống đến từ nguồn NASA, còn vị trí highlight/cut trên GLB chỉ là neo trực quan gần đúng.
+
 ## ✨ Tính năng
 
 - Mô hình Saturn V 3D thật bằng **Three.js** và GLB.
@@ -20,6 +22,7 @@
 - Tôn trọng `prefers-reduced-motion`.
 - Mặt cắt X/Y/Z, vị trí cắt, đảo hướng và **nắp trực quan** bằng stencil.
 - **Guided Learning Phase 6**: 5 bài học semantic VI/EN, annotation 3D, Previous/Next, focus camera, preset Section/Cutaway và deep-link chia sẻ trạng thái bài học.
+- **Deep Anatomy Phase 12**: chuyển giữa cây geometry thật và cây giải phẫu NASA nhiều cấp (S-IC, S-II, S-IVB, Instrument Unit, Apollo), có breadcrumb, nguồn NASA, focus vùng gần đúng và preset X-ray + section cut.
 - Fallback fail-closed: tính năng yêu cầu GLB thật sẽ bị vô hiệu thay vì mô phỏng sai.
 - Giao diện **song ngữ Việt/Anh (VI/EN)**, mặc định tiếng Việt, ghi nhớ lựa chọn bằng `localStorage` và cập nhật `html[lang]` cho công nghệ hỗ trợ.
 - Theme **Light/Dark kiểu aerospace workstation**: neutral-first, một brand-blue chính, surface hierarchy rõ, tab segmented, layered shadow và primary action nổi bật; mobile rút gọn brand để ưu tiên viewport.
@@ -48,7 +51,8 @@ Three.js renderer
   ├─ Exploded view
   ├─ Guided timeline
   ├─ Section / Cutaway
-  └─ Guided Learning / Annotations
+  ├─ Guided Learning / Annotations
+  └─ NASA reference anatomy drill-down
       │
       ▼
 UI VI/EN + accessibility
@@ -71,7 +75,8 @@ Logic domain nằm trong `src/`; mã TypeScript được build sang `public/core
 │  ├─ real-app.mjs
 │  ├─ timeline-controller.mjs
 │  ├─ section-controller.mjs
-│  └─ learning-controller.mjs
+│  ├─ learning-controller.mjs
+│  └─ anatomy-controller.mjs
 ├─ scripts/                 # qualification/re-authoring/local server
 ├─ src/                     # domain logic TypeScript
 ├─ tests/                   # unit + contract/integration
@@ -111,10 +116,10 @@ http://127.0.0.1:4174
 npm test
 ```
 
-### Toàn bộ gate Phase 1 → Phase 7
+### Toàn bộ gate Phase 1 → Phase 12
 
 ```bash
-npm run verify:phase7
+npm run verify:phase12
 ```
 
 ### Accessibility automation
@@ -234,6 +239,7 @@ Mô hình nguồn NASA được pin bằng provenance/fingerprint. Pipeline ki�
 - [`docs/GITHUB_PAGES_SETUP.md`](docs/GITHUB_PAGES_SETUP.md)
 - [`docs/PHASE7_HARDENING.md`](docs/PHASE7_HARDENING.md)
 - [`docs/PHASE9_USABILITY.md`](docs/PHASE9_USABILITY.md)
+- [`docs/PHASE12_DEEP_ANATOMY.md`](docs/PHASE12_DEEP_ANATOMY.md)
 
 ## 🛰️ Nguồn mô hình NASA
 
