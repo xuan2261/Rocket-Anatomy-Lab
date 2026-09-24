@@ -23,6 +23,7 @@ test.describe('Rocket Anatomy Lab — luồng chính', () => {
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Rocket Anatomy Lab - Xuan Bui Thanh - Khoa KTCS - HVHQ')
     await expect(page.locator('[data-control-tab="objects"]')).toHaveText('Đối tượng')
     await expect(page.locator('[data-control-tab="section"]')).toHaveText('Mặt cắt')
+    await expect(page.locator('[data-control-tab="help"]')).toHaveText('Hướng dẫn')
 
     await page.locator('[data-language="en"]').click()
     await expect(page.locator('html')).toHaveAttribute('lang', 'en')
@@ -31,6 +32,7 @@ test.describe('Rocket Anatomy Lab — luồng chính', () => {
     await expect(page.locator('[data-language="en"]')).toHaveAttribute('aria-pressed', 'true')
     await expect(page.locator('[data-control-tab="timeline"]')).toHaveText('Presentation')
     await expect(page.locator('[data-control-tab="section"]')).toHaveText('Section')
+    await expect(page.locator('[data-control-tab="help"]')).toHaveText('Guide')
 
     await page.reload()
     await waitForRealAsset(page)
@@ -363,8 +365,10 @@ test.describe('Rocket Anatomy Lab — luồng chính', () => {
     await expect(page.locator('[data-control-tab="view"]')).toBeFocused()
     await expect(page.locator('[data-control-tab="view"]')).toHaveAttribute('aria-selected', 'true')
     await page.locator('[data-control-tab="view"]').press('End')
-    await expect(page.locator('[data-control-tab="section"]')).toBeFocused()
-    await expect(page.locator('[data-control-tab="section"]')).toHaveAttribute('aria-selected', 'true')
+    await expect(page.locator('[data-control-tab="help"]')).toBeFocused()
+    await expect(page.locator('[data-control-tab="help"]')).toHaveAttribute('aria-selected', 'true')
+    await expect(page.locator('#paneHelp')).toBeVisible()
+    await expect(page.locator('#paneHelp')).toContainText('Bắt đầu nhanh với Rocket Anatomy Lab')
   })
 
   test('tôn trọng reduced-motion', async ({ page }) => {
