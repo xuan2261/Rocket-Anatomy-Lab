@@ -46,6 +46,13 @@ const sectionController = createSectionController({
   disabled: true,
   cappingSupported: false,
 })
+const schematicDetailBtn = document.querySelector('#schematicDetailBtn')
+const schematicExplodeSlider = document.querySelector('#schematicExplodeSlider')
+const schematicDetailStatus = document.querySelector('#schematicDetailStatus')
+if (schematicDetailBtn) schematicDetailBtn.disabled = true
+if (schematicExplodeSlider) schematicExplodeSlider.disabled = true
+if (schematicDetailStatus) schematicDetailStatus.textContent = t('detail.unavailable')
+
 const learningController = createLearningController({
   disabled: true,
 })
