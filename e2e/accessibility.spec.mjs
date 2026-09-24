@@ -60,6 +60,18 @@ for (const language of ['vi', 'en']) {
           `${language}/anatomy-multipart-detail: ${multiPartResults.violations.map(v => v.id).join(', ')}`,
         ).toEqual([])
 
+        await page.locator('#anatomyLoadRealDetailBtn').click()
+        await expect(page.locator('#anatomyRealDetailStatus')).toContainText(language === 'vi' ? 'Đã tải' : 'Real NASA model loaded', { timeout: 30_000 })
+        await page.locator('[data-real-detail-part-id]').first().click()
+        await expect(page.locator('#anatomyPartInspector')).toBeVisible()
+        const inspectorResults = await new AxeBuilder({ page })
+          .withTags(WCAG_AA_TAGS)
+          .analyze()
+        expect(
+          inspectorResults.violations,
+          `${language}/detail-inspector: ${inspectorResults.violations.map(v => v.id).join(', ')}`,
+        ).toEqual([])
+
         await page.locator('[data-structure-mode="model"]').click()
       }
     }
