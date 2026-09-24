@@ -256,7 +256,7 @@ h1 {
 #controlCenterTitle { font-size: 14px; }
 .control-tabs {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 3px;
   padding: 4px;
   border: 1px solid var(--border);
@@ -290,6 +290,54 @@ h1 {
   overscroll-behavior: contain;
 }
 .control-pane[hidden] { display: none; }
+
+.help-pane:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
+}
+.help-steps {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.help-card {
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel-2);
+}
+.help-card strong {
+  display: block;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.3;
+}
+.help-card p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.48;
+}
+.help-tip {
+  margin-top: 10px;
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 42%, var(--panel-2));
+}
+.help-scope { margin-top: 8px; }
+.help-docs-link {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  margin-top: 10px;
+  color: var(--accent-strong);
+  font-weight: 700;
+  font-size: 13px;
+  text-decoration: none;
+}
+.help-docs-link:hover { text-decoration: underline; }
+
 .panel-heading, .timeline-heading, .learning-heading, .section-heading {
   display: flex;
   align-items: flex-start;
@@ -882,7 +930,7 @@ dt { color: var(--muted); } dd { margin: 0; font-weight: 700; }
   .control-center-header > div:first-child { display: none; }
   .control-tabs {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 4px;
     overflow: visible;
   }
@@ -931,7 +979,8 @@ dt { color: var(--muted); } dd { margin: 0; font-weight: 700; }
   .real-detail-part-button,
   .real-detail-part-select,
   .real-detail-part-visibility,
-  .real-detail-inspector-actions button {
+  .real-detail-inspector-actions button,
+  .help-docs-link {
     min-height: 48px;
   }
 
