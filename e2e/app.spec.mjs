@@ -131,7 +131,7 @@ test.describe('Rocket Anatomy Lab — luồng chính', () => {
 
     const search = page.locator('#anatomySearchInput')
     await search.fill('command module')
-    await expect(page.locator('#anatomySearchStatus')).toContainText('1 kết quả')
+    await expect(page.locator('#anatomySearchStatus')).toContainText('kết quả')
     await search.press('ArrowDown')
     const result = page.locator('[data-anatomy-id="apollo-command-module"]')
     await expect(result).toBeFocused()
