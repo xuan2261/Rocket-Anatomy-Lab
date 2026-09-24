@@ -1,6 +1,8 @@
 import { initializeI18n, t } from './i18n.mjs'
+import { initializeWorkspaceUi } from './workspace-ui.mjs'
 
 initializeI18n()
+initializeWorkspaceUi()
 
 const status = document.querySelector('#assetStatus')
 
