@@ -16,6 +16,7 @@
 - Timeline trình bày số: Trước, Phát/Tạm dừng, Tiếp, Khởi động lại, đảo chiều tháo rời/lắp lại.
 - Tôn trọng `prefers-reduced-motion`.
 - Mặt cắt X/Y/Z, vị trí cắt, đảo hướng và **nắp trực quan** bằng stencil.
+- **Guided Learning Phase 6**: 5 bài học semantic VI/EN, annotation 3D, Previous/Next, focus camera, preset Section/Cutaway và deep-link chia sẻ trạng thái bài học.
 - Fallback fail-closed: tính năng yêu cầu GLB thật sẽ bị vô hiệu thay vì mô phỏng sai.
 - Giao diện **song ngữ Việt/Anh (VI/EN)**, mặc định tiếng Việt, ghi nhớ lựa chọn bằng `localStorage` và cập nhật `html[lang]` cho công nghệ hỗ trợ.
 - Responsive cho desktop/mobile/landscape; nút đổi ngôn ngữ có vùng tương tác tối thiểu 44×44 px.
@@ -42,7 +43,8 @@ Three.js renderer
   ├─ Ghost / X-ray
   ├─ Exploded view
   ├─ Guided timeline
-  └─ Section / Cutaway
+  ├─ Section / Cutaway
+  └─ Guided Learning / Annotations
       │
       ▼
 UI VI/EN + accessibility
@@ -64,7 +66,8 @@ Logic domain nằm trong `src/`; mã TypeScript được build sang `public/core
 │  ├─ core/                 # sinh bởi npm run build, không commit
 │  ├─ real-app.mjs
 │  ├─ timeline-controller.mjs
-│  └─ section-controller.mjs
+│  ├─ section-controller.mjs
+│  └─ learning-controller.mjs
 ├─ scripts/                 # qualification/re-authoring/local server
 ├─ src/                     # domain logic TypeScript
 ├─ tests/                   # unit + contract/integration
@@ -104,10 +107,10 @@ http://127.0.0.1:4174
 npm test
 ```
 
-### Toàn bộ gate Phase 1 → Phase 5
+### Toàn bộ gate Phase 1 → Phase 6
 
 ```bash
-npm run verify:phase5
+npm run verify:phase6
 ```
 
 ### Kiểm giao diện song ngữ VI/EN
@@ -175,6 +178,15 @@ Mô hình nguồn NASA được pin bằng provenance/fingerprint. Pipeline ki�
 - `document.documentElement.lang` được cập nhật thành `vi` hoặc `en` để screen reader dùng cách phát âm phù hợp.
 - E2E kiểm cả chuyển ngôn ngữ, trạng thái `aria-pressed` và persistence qua reload.
 
+## 🎓 Bài học có hướng dẫn
+
+- 5 lesson được khóa theo **semantic assembly ID**, không theo tên mesh thô.
+- Annotation là các button 3D-projected có vùng bấm tối thiểu 44×44 px.
+- Panel lesson dùng disclosure semantics với `aria-expanded`.
+- Deep-link dạng `?lesson=<semantic-id>&lang=vi|en` cập nhật bằng History API mà không reload.
+- Mỗi lesson có preset mặt cắt **chuẩn hóa theo mô hình số** để hỗ trợ quan sát; preset không đại diện thông số lắp ráp hay cấu tạo ngoài đời.
+- Fallback renderer vô hiệu hóa learning controls thay vì mô phỏng semantic lesson không có dữ liệu xác minh.
+
 ## ♿ Accessibility
 
 - Điều khiển chính có vùng tương tác tối thiểu 44×44 px.
@@ -211,8 +223,8 @@ Dự án chỉ phục vụ **trực quan hóa và giáo dục dân sự**. Khôn
 
 ## 🗺️ Hướng phát triển
 
-1. Hoàn thiện annotation/callout giáo dục bằng dữ liệu semantic.
-2. Guided lesson sử dụng lại timeline hiện tại.
-3. Preset mặt cắt cho từng nội dung bài học.
-4. Thêm một mô hình không gian dân sự thứ hai để kiểm tính tổng quát của viewer.
-5. Tiếp tục tăng visual regression/a11y coverage trong CI.
+1. Tạo pixel-baseline visual regression trong chính môi trường CI sau khi review screenshot Phase 6.
+2. Thêm kiểm thử accessibility tự động chuyên sâu (axe hoặc tương đương) cho desktop/mobile.
+3. Thêm một mô hình không gian dân sự thứ hai để kiểm tính tổng quát của viewer/lesson engine.
+4. Tách lesson content thành data file có thể biên tập độc lập nếu số bài học tăng.
+5. Tiếp tục mở rộng annotation/callout nhưng giữ semantic-ID contract.

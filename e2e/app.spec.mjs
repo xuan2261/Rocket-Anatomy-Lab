@@ -39,7 +39,7 @@ test.describe('Rocket Anatomy Lab — luồng chính', () => {
   test('chọn cụm, tách cụm và điều khiển timeline', async ({ page }) => {
     await page.goto('/')
     await waitForRealAsset(page)
-    await page.getByRole('button', { name: /Cụm mũi/ }).click()
+    await page.locator('#tree').getByRole('button', { name: /Cụm mũi/ }).click()
     await expect(page.locator('#inspectorTitle')).toContainText('Cụm mũi')
     await page.locator('#timelineNextBtn').click()
     await expect(page.locator('#timelineStatus')).toContainText('Bước 1/5')

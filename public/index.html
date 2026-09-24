@@ -44,6 +44,7 @@
 
       <section class="viewer-panel" data-i18n-aria-label="viewer.panelAria" aria-label="Trình xem 3D">
         <canvas id="viewport" tabindex="0" data-i18n-aria-label="viewer.canvasAria" aria-label="Mô hình phương tiện phóng vũ trụ 3D giáo dục. Kéo để xoay; lăn chuột để thu phóng; bấm vào một phần để chọn."></canvas>
+        <div id="annotationLayer" class="annotation-layer" data-i18n-aria-label="learning.annotationLayerAria" aria-label="Các điểm chú thích giáo dục"></div>
         <div class="viewer-hint" data-i18n="viewer.hint">Kéo để xoay · Lăn chuột để thu phóng · Bấm vào một phần để chọn</div>
         <div class="mode-chip" id="modeChip" data-i18n="viewer.mode.normal">Bình thường</div>
       </section>
@@ -83,6 +84,30 @@
             <input id="timelineSlider" type="range" min="0" max="5" step="1" value="0" aria-describedby="timelineStatus" />
           </label>
           <button id="timelineDirectionBtn" type="button" data-i18n="timeline.directionDisassemble" data-i18n-aria-label="timeline.directionDisassembleAria" aria-label="Hướng trình bày: tháo rời" aria-pressed="false">Hướng: Tháo rời</button>
+        </div>
+      </section>
+
+
+      <section class="learning-dock" data-i18n-aria-label="learning.aria" aria-label="Bài học giáo dục có hướng dẫn">
+        <div class="learning-heading">
+          <button id="learningToggleBtn" class="learning-disclosure" type="button" aria-expanded="true" aria-controls="learningPanelBody" data-i18n="learning.toggle">BÀI HỌC CÓ HƯỚNG DẪN</button>
+          <strong id="learningProgress" aria-live="polite">1/5</strong>
+        </div>
+        <div id="learningPanelBody" class="learning-body">
+          <div class="learning-copy">
+            <span class="panel-kicker" data-i18n="learning.kicker">GIẢI PHẪU SỐ HÓA</span>
+            <h2 id="learningTitle">Cụm đáy</h2>
+            <p id="learningDescription">Chọn bài học để khám phá các vùng hình học giáo dục của mô hình số.</p>
+          </div>
+          <div class="learning-controls">
+            <button id="learningPreviousBtn" type="button" data-i18n="learning.previous">Bài trước</button>
+            <button id="learningFocusBtn" type="button" data-i18n="learning.focus">Tập trung</button>
+            <button id="learningApplyViewBtn" type="button" data-i18n="learning.applyView">Áp dụng góc nhìn học tập</button>
+            <button id="learningAnnotationsBtn" type="button" aria-pressed="true" data-i18n="learning.annotationsOn">Chú thích: Bật</button>
+            <button id="learningCopyLinkBtn" type="button" data-i18n="learning.copyLink">Sao chép liên kết bài học</button>
+            <button id="learningNextBtn" type="button" data-i18n="learning.next">Bài tiếp</button>
+          </div>
+          <span id="learningShareStatus" class="learning-share-status" role="status" aria-live="polite"></span>
         </div>
       </section>
 

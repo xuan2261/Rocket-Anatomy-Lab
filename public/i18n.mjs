@@ -102,6 +102,33 @@ const messages = {
     'raw.unnamed': '(không tên)',
     'raw.unmapped': 'Chưa ánh xạ',
     'raw.fallbackOnly': 'Danh sách đối tượng gốc NASA chỉ khả dụng khi trình kết xuất GLB thật được tải.',
+    'learning.aria': 'Bài học giáo dục có hướng dẫn',
+    'learning.toggle': 'BÀI HỌC CÓ HƯỚNG DẪN',
+    'learning.kicker': 'GIẢI PHẪU SỐ HÓA',
+    'learning.progress': 'Bài {current}/{total}',
+    'learning.previous': 'Bài trước',
+    'learning.next': 'Bài tiếp',
+    'learning.focus': 'Tập trung',
+    'learning.applyView': 'Áp dụng góc nhìn học tập',
+    'learning.copyLink': 'Sao chép liên kết bài học',
+    'learning.copied': 'Đã sao chép liên kết bài học.',
+    'learning.copyFailed': 'Không thể sao chép tự động; URL hiện tại đã chứa trạng thái bài học.',
+    'learning.annotationsOn': 'Chú thích: Bật',
+    'learning.annotationsOff': 'Chú thích: Tắt',
+    'learning.annotationAria': 'Mở bài học cho {label}',
+    'learning.annotationLayerAria': 'Các điểm chú thích giáo dục',
+    'learning.unavailable': 'Bài học không khả dụng',
+    'learning.unavailableDescription': 'Chế độ này cần GLB giáo dục đã tái cấu trúc với các cụm semantic đã xác minh.',
+    'learning.lesson.base.title': 'Bài 1 · Cụm đáy',
+    'learning.lesson.base.body': 'Quan sát vùng thấp nhất của mô hình số hóa và mối liên hệ vị trí của nó với toàn bộ phương tiện. Ranh giới trong bài chỉ phục vụ trình bày hình học giáo dục.',
+    'learning.lesson.lower.title': 'Bài 2 · Cụm thân dưới',
+    'learning.lesson.lower.body': 'Khám phá vùng thân dưới như một cụm hiển thị độc lập, dùng để luyện thao tác chọn, cô lập và quan sát mặt cắt trên mô hình số.',
+    'learning.lesson.center.title': 'Bài 3 · Cụm thân giữa',
+    'learning.lesson.center.body': 'Dùng vùng trung tâm làm mốc để so sánh tương quan giữa các cụm phía dưới và phía trên. Chế độ bóng mờ giúp duy trì bối cảnh không gian.',
+    'learning.lesson.upper.title': 'Bài 4 · Cụm thân trên',
+    'learning.lesson.upper.body': 'Quan sát vùng thân trên trong cấu trúc tổng thể và cách nó được biểu diễn thành một nhánh semantic độc lập trong GLB giáo dục.',
+    'learning.lesson.nose.title': 'Bài 5 · Cụm mũi / phía tàu vũ trụ',
+    'learning.lesson.nose.body': 'Khảo sát vùng trên cùng của mô hình số hóa. Nhãn bài học mô tả vùng hiển thị giáo dục, không khẳng định ranh giới tầng lịch sử hay quy trình lắp ráp ngoài đời.',
   },
   en: {
     'app.eyebrow': 'EDUCATIONAL 3D VISUALIZATION',
@@ -202,6 +229,33 @@ const messages = {
     'raw.unnamed': '(unnamed)',
     'raw.unmapped': 'Unmapped',
     'raw.fallbackOnly': 'The raw NASA object inventory is available only when the real GLB renderer is loaded.',
+    'learning.aria': 'Guided educational lessons',
+    'learning.toggle': 'GUIDED LEARNING',
+    'learning.kicker': 'DIGITAL ANATOMY',
+    'learning.progress': 'Lesson {current}/{total}',
+    'learning.previous': 'Previous lesson',
+    'learning.next': 'Next lesson',
+    'learning.focus': 'Focus',
+    'learning.applyView': 'Apply learning view',
+    'learning.copyLink': 'Copy lesson link',
+    'learning.copied': 'Lesson link copied.',
+    'learning.copyFailed': 'Automatic copy was unavailable; the current URL already contains the lesson state.',
+    'learning.annotationsOn': 'Annotations: On',
+    'learning.annotationsOff': 'Annotations: Off',
+    'learning.annotationAria': 'Open lesson for {label}',
+    'learning.annotationLayerAria': 'Educational annotation points',
+    'learning.unavailable': 'Learning unavailable',
+    'learning.unavailableDescription': 'This mode requires the verified re-authored educational GLB with semantic assemblies.',
+    'learning.lesson.base.title': 'Lesson 1 · Base assembly',
+    'learning.lesson.base.body': 'Observe the lowest region of the digital model and its positional relationship to the complete vehicle. Lesson boundaries are display-oriented educational geometry.',
+    'learning.lesson.lower.title': 'Lesson 2 · Lower body assembly',
+    'learning.lesson.lower.body': 'Explore the lower body as an independent display region for selection, isolation, and digital section-view practice.',
+    'learning.lesson.center.title': 'Lesson 3 · Center body assembly',
+    'learning.lesson.center.body': 'Use the central region as a reference for comparing the lower and upper assemblies. Ghost mode preserves spatial context while focusing attention.',
+    'learning.lesson.upper.title': 'Lesson 4 · Upper body assembly',
+    'learning.lesson.upper.body': 'Inspect the upper body in context and see how it is represented as an independent semantic subtree in the educational GLB.',
+    'learning.lesson.nose.title': 'Lesson 5 · Nose / spacecraft-side assembly',
+    'learning.lesson.nose.body': 'Inspect the top visual region of the digital model. The lesson label describes an educational display region, not a historical staging boundary or real-world assembly procedure.',
   },
 }
 
@@ -282,12 +336,19 @@ function renderLanguageSwitcher() {
   if (group) group.setAttribute('aria-label', t('language.group'))
 }
 
-export function setLanguage(language, { persist = true, notify = true } = {}) {
+export function setLanguage(language, { persist = true, notify = true, syncUrl = true } = {}) {
   const next = SUPPORTED.has(language) ? language : DEFAULT_LANGUAGE
   currentLanguage = next
   document.documentElement.lang = next
   if (persist) {
     try { localStorage.setItem(STORAGE_KEY, next) } catch {}
+  }
+  if (syncUrl) {
+    try {
+      const url = new URL(location.href)
+      url.searchParams.set('lang', next)
+      history.replaceState(history.state, '', url)
+    } catch {}
   }
   applyStaticTranslations()
   renderLanguageSwitcher()
@@ -303,11 +364,15 @@ export function onLanguageChange(listener) {
 export function initializeI18n() {
   let preferred = DEFAULT_LANGUAGE
   try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (SUPPORTED.has(stored)) preferred = stored
+    const queryLanguage = new URLSearchParams(location.search).get('lang')
+    if (SUPPORTED.has(queryLanguage)) preferred = queryLanguage
+    else {
+      const stored = localStorage.getItem(STORAGE_KEY)
+      if (SUPPORTED.has(stored)) preferred = stored
+    }
   } catch {}
   document.querySelectorAll?.('[data-language]').forEach(button => {
     button.addEventListener('click', () => setLanguage(button.dataset.language))
   })
-  return setLanguage(preferred, { persist: false, notify: false })
+  return setLanguage(preferred, { persist: false, notify: false, syncUrl: false })
 }

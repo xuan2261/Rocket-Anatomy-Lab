@@ -82,6 +82,21 @@ export function createSectionController({
   slider?.addEventListener('input', () => commit(setSectionPosition(state, Number(slider.value) / 100), 'position'))
   const unsubscribeLanguage = onLanguageChange(() => render())
 
+  const applyPreset = preset => {
+    if (isDisabled || !preset) return
+    const previous = state
+    let next = state
+    next = setSectionEnabled(next, preset.enabled !== false)
+    next = setSectionAxis(next, preset.axis ?? 'y')
+    next = setSectionPosition(next, Number(preset.position ?? 0.5))
+    const shouldInvert = Boolean(preset.inverted)
+    if (next.inverted !== shouldInvert) next = toggleSectionInverted(next)
+    next = setSectionCapped(next, capsAvailable && preset.capped !== false)
+    state = next
+    onChange(previous, state, { reason: 'preset' })
+    render()
+  }
+
   const setDisabled = value => {
     isDisabled = Boolean(value)
     render()
@@ -106,6 +121,7 @@ export function createSectionController({
     getState: () => state,
     setDisabled,
     setCappingSupported,
+    applyPreset,
     resetSilently,
     destroy: () => unsubscribeLanguage(),
   }

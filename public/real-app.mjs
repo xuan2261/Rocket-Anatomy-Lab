@@ -19,6 +19,7 @@ import { cameraTransitionDurationMs, standardTransitionDurationMs, timelineAssem
 import { createTimelineController } from './timeline-controller.mjs'
 import { sectionPlaneDescriptor } from './core/section.js'
 import { createSectionController } from './section-controller.mjs'
+import { createLearningController } from './learning-controller.mjs'
 import { entityDescription, entityLabel, onLanguageChange, t } from './i18n.mjs'
 
 const EDUCATION_ASSET = './assets/saturn-v-education.glb'
@@ -58,6 +59,7 @@ let assemblyTransition = null
 let cameraTransition = null
 let overviewCamera = null
 let sectionController = null
+let learningController = null
 let sectionState = null
 let sectionModelBox = null
 let sectionCapMesh = null
@@ -554,6 +556,25 @@ function restoreOverviewCamera(durationMs) {
   startCameraTransition(overviewCamera.position, overviewCamera.target, durationMs)
 }
 
+function annotationAnchorForGroup(groupId) {
+  if (!model || state.hiddenIds.has(groupId)) return null
+  if (state.isolatedId && state.isolatedId !== groupId) return null
+  const roots = groupedNodes.get(groupId) ?? []
+  if (!roots.length) return null
+  const box = new THREE.Box3()
+  for (const root of roots) box.expandByObject(root)
+  if (box.isEmpty()) return null
+  const center = box.getCenter(new THREE.Vector3())
+  center.project(camera)
+  if (center.z < -1 || center.z > 1) return null
+  const rect = canvas.getBoundingClientRect()
+  return {
+    x: (center.x * 0.5 + 0.5) * rect.width,
+    y: (-center.y * 0.5 + 0.5) * rect.height,
+    visible: true,
+  }
+}
+
 function handleTimelineTransition(previous, next, meta) {
   if (rendererKind !== 'assembly' || meta.reason === 'direction') return
   state = setExplode(state, 0)
@@ -811,6 +832,7 @@ function animate(now = performance.now()) {
   updateCameraTransition(now)
   controls.update()
   renderer.render(scene, camera)
+  learningController?.updateAnnotations?.()
   frameId = requestAnimationFrame(animate)
 }
 animate()
@@ -824,6 +846,7 @@ const unsubscribeLanguage = onLanguageChange(() => {
 window.addEventListener('pagehide', () => {
   cancelAnimationFrame(frameId)
   timelineController?.destroy?.()
+  learningController?.destroy?.()
   unsubscribeLanguage()
   sectionController?.destroy?.()
   resizeObserver.disconnect()
@@ -869,4 +892,22 @@ timelineController = createTimelineController({
   onTransition: handleTimelineTransition,
   onReducedMotionChange: handleReducedMotionChange,
 })
+learningController = createLearningController({
+  disabled: rendererKind !== 'assembly',
+  onSelectAssembly: assemblyId => {
+    state = selectPart(state, assemblyId)
+    renderUiAndModel()
+  },
+  onFocusAssembly: assemblyId => {
+    const reducedMotion = timelineController?.getState?.().reducedMotion === true
+    focusCameraOnGroup(assemblyId, reducedMotion ? 0 : 480)
+  },
+  onApplyView: lesson => {
+    state = setMode(state, lesson.viewMode ?? 'normal')
+    sectionController?.applyPreset?.(lesson.sectionPreset)
+    renderUiAndModel()
+  },
+  getAnnotationAnchor: annotationAnchorForGroup,
+})
 renderUiAndModel()
+learningController.updateAnnotations()
