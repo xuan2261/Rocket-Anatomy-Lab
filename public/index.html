@@ -71,10 +71,16 @@
           <div class="panel-heading compact-heading">
             <div>
               <span class="panel-kicker" data-i18n="structure.kicker">CẤU TRÚC</span>
-              <h2 data-i18n="structure.title">Các cụm giáo dục</h2>
+              <h2 id="structureTitle" data-i18n="structure.title">Các cụm giáo dục</h2>
             </div>
             <button class="text-button" id="showAllBtn" type="button" data-i18n="structure.showAll">Hiện tất cả</button>
           </div>
+          <div class="structure-mode-switcher" role="group" data-i18n-aria-label="structure.modeAria" aria-label="Chế độ duyệt cấu trúc">
+            <button type="button" data-structure-mode="model" aria-pressed="true" data-i18n="structure.modeModel">Mô hình 3D</button>
+            <button type="button" data-structure-mode="anatomy" aria-pressed="false" data-i18n="structure.modeAnatomy">Giải phẫu NASA</button>
+          </div>
+
+          <div id="modelStructurePanel">
           <div id="tree" class="tree" role="tree" data-i18n-aria-label="structure.treeAria" aria-label="Cấu trúc mô hình"></div>
 
           <div class="inspector-card" aria-live="polite">
@@ -101,6 +107,30 @@
               <div id="rawInventory" class="raw-inventory"></div>
             </details>
           </details>
+          </div>
+
+          <section id="anatomyPanel" class="anatomy-panel" data-i18n-aria-label="anatomy.panelAria" aria-label="Giải phẫu tham chiếu NASA" hidden>
+            <div class="anatomy-toolbar">
+              <button id="anatomyBackBtn" type="button" class="text-button" data-i18n="anatomy.back">← Quay lại</button>
+              <span id="anatomyBinding" class="anatomy-binding-badge">Tham chiếu NASA</span>
+            </div>
+            <nav id="anatomyBreadcrumbs" class="anatomy-breadcrumbs" data-i18n-aria-label="anatomy.breadcrumbAria" aria-label="Đường dẫn giải phẫu"></nav>
+            <div class="anatomy-reference-card">
+              <div class="anatomy-title-row">
+                <span class="panel-kicker" data-i18n="anatomy.kicker">GIẢI PHẪU THAM CHIẾU</span>
+                <span id="anatomyKind" class="anatomy-kind-badge">Phương tiện</span>
+              </div>
+              <h2 id="anatomyTitle">Saturn V / Apollo</h2>
+              <p id="anatomyDescription">Cây giải phẫu tham chiếu theo tài liệu NASA.</p>
+              <p class="capability-note" data-i18n="anatomy.bindingNote">Các vị trí 3D là neo trực quan gần đúng; không phải ranh giới kỹ thuật được suy ra từ GLB.</p>
+              <a id="anatomySourceLink" class="anatomy-source-link" href="https://science.nasa.gov/3d-resources/saturn-v/" target="_blank" rel="noreferrer">Nguồn NASA ↗</a>
+            </div>
+            <div id="anatomyList" class="anatomy-list" data-i18n-aria-label="anatomy.childrenAria" aria-label="Các mục giải phẫu con"></div>
+            <div class="anatomy-actions">
+              <button id="anatomyFocusBtn" type="button" data-i18n="anatomy.focus">Tập trung vùng 3D</button>
+              <button id="anatomyInspectBtn" type="button" class="primary-action" data-i18n="anatomy.inspect">Khám phá bên trong</button>
+            </div>
+          </section>
         </section>
 
         <section id="paneView" class="control-pane" role="tabpanel" aria-labelledby="tabView" data-control-pane="view" hidden>
