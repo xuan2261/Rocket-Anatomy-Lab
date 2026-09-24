@@ -17,9 +17,12 @@
   --focus: #9a5b00;
   --danger: #b42318;
   --success: #0f6b45;
-  --viewer-a: #e7f0f8;
-  --viewer-b: #c7d8e7;
-  --viewer-c: #94acc2;
+  --viewer-a: #eef5fb;
+  --viewer-b: #d9e5ef;
+  --viewer-c: #b8cad9;
+  --viewer-scene-bg: #d9e5ef;
+  --viewer-selection: #b45309;
+  --viewer-selection-emissive: #d97706;
   --overlay: rgba(255,255,255,.88);
   --shadow: 0 1px 2px rgba(16,24,40,.06), 0 14px 32px rgba(16,24,40,.08);
   --shadow-subtle: 0 1px 2px rgba(16,24,40,.06), 0 4px 12px rgba(16,24,40,.05);
@@ -48,6 +51,9 @@
   --viewer-a: #18293b;
   --viewer-b: #0f1925;
   --viewer-c: #070b11;
+  --viewer-scene-bg: #0b111a;
+  --viewer-selection: #ffd166;
+  --viewer-selection-emissive: #d99024;
   --overlay: rgba(10,15,22,.88);
   --shadow: 0 1px 2px rgba(0,0,0,.40), 0 18px 38px rgba(0,0,0,.32);
   --shadow-subtle: 0 1px 2px rgba(0,0,0,.34), 0 6px 14px rgba(0,0,0,.24);
@@ -595,9 +601,10 @@ h1 {
   white-space: nowrap;
 }
 .real-detail-part-select[aria-current="true"] {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 78%, var(--border));
+  background: color-mix(in srgb, var(--accent) 14%, var(--panel));
   color: var(--accent-strong);
+  box-shadow: inset 3px 0 0 var(--accent);
   font-weight: 750;
 }
 .real-detail-part-select[data-hovered="true"] {
@@ -659,7 +666,13 @@ h1 {
   border: 1px solid transparent;
   border-radius: 10px;
 }
-.tree-row[data-selected="true"] { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 38%, transparent); }
+.tree-row[data-selected="true"] {
+  background: color-mix(in srgb, var(--accent) 13%, var(--panel));
+  border-color: color-mix(in srgb, var(--accent) 72%, var(--border));
+  box-shadow: inset 3px 0 0 var(--accent), 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.tree-row[data-selected="true"] .tree-select strong { color: var(--accent-strong); }
+.tree-row[data-selected="true"] .tree-select span { color: color-mix(in srgb, var(--accent-strong) 74%, var(--muted)); }
 .tree-toggle-target {
   width: 44px;
   height: 44px;
