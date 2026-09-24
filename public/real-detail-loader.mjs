@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
 import { detailAssetForNode } from './core/detailAssets.js'
 
 const cloneMaterials = root => {
@@ -52,6 +53,9 @@ export function createRealDetailLoader({ scene, modelBox, sectionPlane }) {
   if (!scene || !modelBox || modelBox.isEmpty()) throw new Error('Real detail loader requires a scene and non-empty model box')
 
   const loader = new GLTFLoader()
+  const dracoLoader = new DRACOLoader()
+  dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/libs/draco/')
+  loader.setDRACOLoader(dracoLoader)
   const cache = new Map()
   const resolvedByNode = new Map()
   let sectionEnabled = false
@@ -441,6 +445,7 @@ export function createRealDetailLoader({ scene, modelBox, sectionPlane }) {
     }
     cache.clear()
     resolvedByNode.clear()
+    dracoLoader.dispose()
     activeNodeId = null
   }
 
