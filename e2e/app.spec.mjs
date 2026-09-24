@@ -170,34 +170,93 @@ test.describe('Rocket Anatomy Lab — luồng chính', () => {
     await expect(page.locator('#anatomyRealDetailStatus')).toContainText('4 part')
 
     const slider = page.locator('#anatomyRealDetailExplodeSlider')
-    const parts = page.locator('.real-detail-part-button')
+    const parts = page.locator('[data-real-detail-part-id]')
+    const visibility = page.locator('[data-real-detail-part-visibility-id]')
     await expect(page.locator('#anatomyRealDetailPartsWrap')).toBeVisible()
     await expect(parts).toHaveCount(4)
+    await expect(visibility).toHaveCount(4)
     await expect(slider).toBeDisabled()
     await expect(parts.first()).toBeDisabled()
+    await expect(visibility.first()).toBeDisabled()
 
     await page.locator('#anatomyLoadRealDetailBtn').click()
     await expect(page.locator('#anatomyRealDetailStatus')).toContainText('Đã tải mô hình NASA thật', { timeout: 30_000 })
     await expect(page.locator('#modeValue')).toContainText('Bóng mờ')
     await expect(slider).toBeEnabled()
     await expect(parts.first()).toBeEnabled()
+    await expect(visibility.first()).toBeEnabled()
 
     await slider.fill('55')
     await expect(slider).toHaveValue('55')
 
-    const firstPart = parts.first()
-    await firstPart.click()
-    await expect(firstPart).toHaveAttribute('aria-pressed', 'false')
-    await firstPart.click()
-    await expect(firstPart).toHaveAttribute('aria-pressed', 'true')
+    await visibility.first().click()
+    await expect(visibility.first()).toHaveAttribute('aria-pressed', 'false')
+    await visibility.first().click()
+    await expect(visibility.first()).toHaveAttribute('aria-pressed', 'true')
 
     await openControlPanel(page, 'view')
     await page.locator('#resetBtn').click()
     await openControlPanel(page, 'objects')
     await expect(slider).toHaveValue('0')
     for (let index = 0; index < 4; index += 1) {
-      await expect(parts.nth(index)).toHaveAttribute('aria-pressed', 'true')
+      await expect(visibility.nth(index)).toHaveAttribute('aria-pressed', 'true')
     }
+  })
+
+  test('Phase 17 inspector đồng bộ selection, focus modes và deep-link state', async ({ page }) => {
+    await page.goto('/?structure=anatomy&anatomy=sic-stage&lang=vi')
+    await waitForRealAsset(page)
+    await openControlPanel(page, 'objects')
+
+    await page.locator('#anatomyLoadRealDetailBtn').click()
+    await expect(page.locator('#anatomyRealDetailStatus')).toContainText('Đã tải mô hình NASA thật', { timeout: 30_000 })
+
+    const parts = page.locator('[data-real-detail-part-id]')
+    const visibility = page.locator('[data-real-detail-part-visibility-id]')
+    const first = parts.first()
+    const second = parts.nth(1)
+
+    await first.click()
+    await expect(first).toHaveAttribute('aria-current', 'true')
+    await expect(page.locator('#anatomyPartInspector')).toBeVisible()
+    await expect(page.locator('#anatomyPartInspectorTitle')).toHaveText('top part a.stl')
+    await expect(page.locator('#anatomyPartTriangleCount')).not.toHaveText('—')
+    await expect(page.locator('#anatomyPartMeshCount')).not.toHaveText('—')
+    await expect(page).toHaveURL(/detailPart=stage1-top-a/)
+
+    await second.hover()
+    await expect(second).toHaveAttribute('data-hovered', 'true')
+    await page.locator('#anatomyPartInspectorTitle').hover()
+    await expect(second).toHaveAttribute('data-hovered', 'false')
+
+    await page.locator('#anatomyPartGhostBtn').click()
+    await expect(page.locator('#anatomyPartGhostBtn')).toHaveAttribute('aria-pressed', 'true')
+    await expect(page).toHaveURL(/detailGhost=1/)
+
+    await page.locator('#anatomyPartOnlyBtn').click()
+    await expect(page.locator('#anatomyPartGhostBtn')).toHaveAttribute('aria-pressed', 'false')
+    await expect(page.locator('#anatomyPartOnlyBtn')).toHaveAttribute('aria-pressed', 'true')
+    await expect(page).toHaveURL(/detailOnly=1/)
+    await expect(page).not.toHaveURL(/detailGhost=1/)
+
+    await page.locator('#anatomyPartFocusBtn').click()
+
+    await page.locator('#anatomyRealDetailExplodeSlider').fill('40')
+    await expect(page).toHaveURL(/detailExplode=40/)
+
+    await visibility.nth(2).click()
+    await expect(visibility.nth(2)).toHaveAttribute('aria-pressed', 'false')
+    await expect(page).toHaveURL(/detailHidden=/)
+
+    await page.reload()
+    await waitForRealAsset(page)
+    await openControlPanel(page, 'objects')
+    await expect(page.locator('#anatomyRealDetailStatus')).toContainText('Đã tải mô hình NASA thật', { timeout: 30_000 })
+    await expect(page.locator('#anatomyPartInspector')).toBeVisible()
+    await expect(page.locator('#anatomyPartInspectorTitle')).toHaveText('top part a.stl')
+    await expect(page.locator('#anatomyRealDetailExplodeSlider')).toHaveValue('40')
+    await expect(page.locator('#anatomyPartOnlyBtn')).toHaveAttribute('aria-pressed', 'true')
+    await expect(page.locator('[data-real-detail-part-visibility-id="stage1-bottom-a"]')).toHaveAttribute('aria-pressed', 'false')
   })
 
   test('Phase 15 lazy-load mô hình Lunar Module thật đã xác minh', async ({ page }) => {
