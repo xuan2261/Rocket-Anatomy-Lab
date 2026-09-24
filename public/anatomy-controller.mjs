@@ -12,12 +12,14 @@ import {
   filterAnatomyNodes,
   structureModeFromSearch,
 } from './core/anatomyNavigation.js'
+import { detailAssetForNode } from './core/detailAssets.js'
 import { getLanguage, onLanguageChange, t } from './i18n.mjs'
 
 export function createAnatomyController({
   disabled = false,
   onFocusReference = () => {},
   onInspectReference = () => {},
+  onLoadRealDetail = async () => false,
   getReferenceAnchor = () => null,
 } = {}) {
   const errors = validateAnatomyManifest(saturnVAnatomyManifest)
@@ -48,12 +50,19 @@ export function createAnatomyController({
   const copyBtn = document.querySelector('#anatomyCopyLinkBtn')
   const shareStatus = document.querySelector('#anatomyShareStatus')
   const referenceLayer = document.querySelector('#anatomyReferenceLayer')
+  const realDetailCard = document.querySelector('#anatomyRealDetailCard')
+  const realDetailTitle = document.querySelector('#anatomyRealDetailTitle')
+  const realDetailBtn = document.querySelector('#anatomyLoadRealDetailBtn')
+  const realDetailStatus = document.querySelector('#anatomyRealDetailStatus')
 
   let mode = structureModeFromSearch(location.search, nodeIds)
   let currentId = deepLinkedId ?? saturnVAnatomyManifest.rootId
   let isDisabled = Boolean(disabled)
   let searchQuery = ''
   let copyTimer = null
+  let detailLoadingNodeId = null
+  const loadedDetailNodes = new Set()
+  const failedDetailNodes = new Set()
 
   const current = () => anatomyNodeById(saturnVAnatomyManifest, currentId)
   const localized = value => anatomyText(value, getLanguage())
@@ -176,6 +185,24 @@ export function createAnatomyController({
       sourceLink.href = item.sourceUrl
       sourceLink.textContent = t('anatomy.source', { source: item.sourceLabel })
     }
+
+    const realDetail = detailAssetForNode(item.id)
+    const detailAvailable = !isDisabled && Boolean(realDetail)
+    if (realDetailCard) realDetailCard.hidden = !detailAvailable
+    if (realDetailTitle && realDetail) realDetailTitle.textContent = localized(realDetail.label)
+    if (realDetailBtn) {
+      const loading = detailLoadingNodeId === item.id
+      realDetailBtn.disabled = !detailAvailable || loading
+      realDetailBtn.textContent = t(loadedDetailNodes.has(item.id) ? 'anatomy.realDetailShow' : 'anatomy.realDetailLoad')
+    }
+    if (realDetailStatus) {
+      if (!detailAvailable) realDetailStatus.textContent = ''
+      else if (detailLoadingNodeId === item.id) realDetailStatus.textContent = t('anatomy.realDetailLoading')
+      else if (failedDetailNodes.has(item.id)) realDetailStatus.textContent = t('anatomy.realDetailFailed')
+      else if (loadedDetailNodes.has(item.id)) realDetailStatus.textContent = t('anatomy.realDetailLoaded')
+      else realDetailStatus.textContent = t('anatomy.realDetailReady')
+    }
+
     renderBreadcrumb(item)
     renderList(item)
     renderReferenceMarker(item)
@@ -222,6 +249,30 @@ export function createAnatomyController({
   inspectBtn?.addEventListener('click', () => {
     const item = current()
     if (!isDisabled && item) onInspectReference(item)
+  })
+
+  realDetailBtn?.addEventListener('click', async () => {
+    const item = current()
+    const detail = item ? detailAssetForNode(item.id) : null
+    if (isDisabled || !item || !detail || detailLoadingNodeId) return
+
+    detailLoadingNodeId = item.id
+    failedDetailNodes.delete(item.id)
+    renderAnatomy()
+    try {
+      const loaded = await onLoadRealDetail(item)
+      if (loaded === false) {
+        failedDetailNodes.add(item.id)
+      } else {
+        loadedDetailNodes.add(item.id)
+        failedDetailNodes.delete(item.id)
+      }
+    } catch {
+      failedDetailNodes.add(item.id)
+    } finally {
+      detailLoadingNodeId = null
+      renderAnatomy()
+    }
   })
 
   searchInput?.addEventListener('input', () => {
@@ -312,6 +363,9 @@ export function createAnatomyController({
       unsubscribeLanguage()
       window.removeEventListener('popstate', handlePopState)
       if (copyTimer !== null) window.clearTimeout(copyTimer)
+      detailLoadingNodeId = null
+      loadedDetailNodes.clear()
+      failedDetailNodes.clear()
       referenceLayer?.replaceChildren()
     },
   }
