@@ -70,6 +70,7 @@ jobs:
           cache-dependency-path: package.json
       - run: npm install --no-fund --no-audit
       - run: npx playwright install --with-deps chromium
+      - run: npm run verify:ci
       - run: npm run test:visual
       - name: Upload visual Playwright report
         if: ${{ !cancelled() }}
