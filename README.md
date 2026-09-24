@@ -24,6 +24,7 @@
 - **Guided Learning Phase 6**: 5 bài học semantic VI/EN, annotation 3D, Previous/Next, focus camera, preset Section/Cutaway và deep-link chia sẻ trạng thái bài học.
 - **Deep Anatomy Phase 12**: chuyển giữa cây geometry thật và cây giải phẫu NASA nhiều cấp (S-IC, S-II, S-IVB, Instrument Unit, Apollo), có breadcrumb, nguồn NASA, focus vùng gần đúng và preset X-ray + section cut.
 - **Anatomy Navigation Phase 13**: deep-link từng anatomy node, search VI/EN, Back/Forward, evidence drawer, viewport reference marker và camera bookmark gần đúng.
+- **Procedural Detail Phase 14**: lớp 3D sơ đồ bổ sung bằng Three.js `InstancedMesh` + `EdgesGeometry`, clipping theo mặt cắt và bóc tách độc lập; luôn gắn nhãn minh họa, không phải geometry kỹ thuật/chế tạo.
 - Fallback fail-closed: tính năng yêu cầu GLB thật sẽ bị vô hiệu thay vì mô phỏng sai.
 - Giao diện **song ngữ Việt/Anh (VI/EN)**, mặc định tiếng Việt, ghi nhớ lựa chọn bằng `localStorage` và cập nhật `html[lang]` cho công nghệ hỗ trợ.
 - Theme **Light/Dark kiểu aerospace workstation**: neutral-first, một brand-blue chính, surface hierarchy rõ, tab segmented, layered shadow và primary action nổi bật; mobile rút gọn brand để ưu tiên viewport.
@@ -117,10 +118,10 @@ http://127.0.0.1:4174
 npm test
 ```
 
-### Toàn bộ gate Phase 1 → Phase 13
+### Toàn bộ gate Phase 1 → Phase 14
 
 ```bash
-npm run verify:phase13
+npm run verify:phase14
 ```
 
 ### Accessibility automation
@@ -242,6 +243,7 @@ Mô hình nguồn NASA được pin bằng provenance/fingerprint. Pipeline ki�
 - [`docs/PHASE9_USABILITY.md`](docs/PHASE9_USABILITY.md)
 - [`docs/PHASE12_DEEP_ANATOMY.md`](docs/PHASE12_DEEP_ANATOMY.md)
 - [`docs/PHASE13_ANATOMY_NAVIGATION.md`](docs/PHASE13_ANATOMY_NAVIGATION.md)
+- [`docs/PHASE14_PROCEDURAL_DETAIL.md`](docs/PHASE14_PROCEDURAL_DETAIL.md)
 
 ## 🛰️ Nguồn mô hình NASA
 
