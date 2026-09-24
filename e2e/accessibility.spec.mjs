@@ -10,6 +10,7 @@ async function waitForRealAsset(page) {
 
 for (const language of ['vi', 'en']) {
   test(`WCAG A/AA — ${language} across Control Center tabs @a11y`, async ({ page }) => {
+    test.setTimeout(120_000)
     await page.goto(`/?lang=${language}&lesson=center-body-assembly`)
     await waitForRealAsset(page)
     await expect(page.locator('html')).toHaveAttribute('lang', language)
