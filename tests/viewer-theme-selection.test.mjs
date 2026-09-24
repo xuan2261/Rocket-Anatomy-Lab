@@ -22,5 +22,5 @@ test('viewer theme and selection clarity stay synchronized across DOM and Three.
   assert.match(realApp, /data-selected-assembly|selectedAssembly/)
   assert.doesNotMatch(realApp, /scene\.background\s*=\s*new THREE\.Color\(0x0b111a\)/)
 
-  assert.match(semantic, /hasSelection\) return selected \? 1 : 0\.52/)
+  assert.match(semantic, /if \(hasSelection\)[\s\S]*return selected \? 1 : 0\.52/)
 })
