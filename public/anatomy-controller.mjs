@@ -475,6 +475,46 @@ export function createAnatomyController({
     if (applied === false) return
     detailExplodeByNode.set(item.id, amount)
     renderAnatomy()
+    syncUrl()
+  })
+
+  partFocusBtn?.addEventListener('click', () => {
+    const item = current()
+    const partId = item ? selectedDetailPartByNode.get(item.id) : null
+    if (!item || !partId) return
+    onFocusRealDetailPart(item, partId)
+  })
+
+  partGhostBtn?.addEventListener('click', async () => {
+    const item = current()
+    const partId = item ? selectedDetailPartByNode.get(item.id) : null
+    if (!item || !partId) return
+    const next = ghostOtherPartsByNode.get(item.id) !== true
+    if (next && onlyPartByNode.get(item.id) === true) {
+      await onShowOnlyRealDetailPart(item, partId, false)
+      onlyPartByNode.set(item.id, false)
+    }
+    const applied = await onGhostOtherRealDetailParts(item, partId, next)
+    if (applied === false) return
+    ghostOtherPartsByNode.set(item.id, next)
+    renderAnatomy()
+    syncUrl({ push: true })
+  })
+
+  partOnlyBtn?.addEventListener('click', async () => {
+    const item = current()
+    const partId = item ? selectedDetailPartByNode.get(item.id) : null
+    if (!item || !partId) return
+    const next = onlyPartByNode.get(item.id) !== true
+    if (next && ghostOtherPartsByNode.get(item.id) === true) {
+      await onGhostOtherRealDetailParts(item, partId, false)
+      ghostOtherPartsByNode.set(item.id, false)
+    }
+    const applied = await onShowOnlyRealDetailPart(item, partId, next)
+    if (applied === false) return
+    onlyPartByNode.set(item.id, next)
+    renderAnatomy()
+    syncUrl({ push: true })
   })
 
   searchInput?.addEventListener('input', () => {
@@ -511,6 +551,80 @@ export function createAnatomyController({
     }, 2200)
   })
 
+  const applyDetailStateFromLocation = async ({ syncAfter = false } = {}) => {
+    const item = current()
+    const detail = item ? detailAssetForNode(item.id) : null
+    if (!item || detail?.sourceKind !== 'generated-stl-package' || isDisabled) {
+      if (syncAfter) syncUrl()
+      return
+    }
+
+    const partIds = detail.sourceParts.map(part => part.id)
+    const requested = detailInspectorStateFromSearch(location.search, partIds)
+    const needsLoad = Boolean(
+      requested.partId ||
+      requested.explode > 0 ||
+      requested.hiddenPartIds.length ||
+      requested.ghostOthers ||
+      requested.onlyPart
+    )
+
+    if (needsLoad && !loadedDetailNodes.has(item.id)) {
+      detailLoadingNodeId = item.id
+      renderAnatomy()
+      try {
+        const loaded = await onLoadRealDetail(item)
+        if (loaded === false) {
+          failedDetailNodes.add(item.id)
+          return
+        }
+        loadedDetailNodes.add(item.id)
+        failedDetailNodes.delete(item.id)
+      } catch {
+        failedDetailNodes.add(item.id)
+        return
+      } finally {
+        detailLoadingNodeId = null
+      }
+    }
+
+    if (loadedDetailNodes.has(item.id)) {
+      let visibility = detailPartVisibilityByNode.get(item.id)
+      if (!visibility) {
+        visibility = new Map(detail.sourceParts.map(part => [part.id, true]))
+        detailPartVisibilityByNode.set(item.id, visibility)
+      }
+      const hidden = new Set(requested.hiddenPartIds)
+      for (const part of detail.sourceParts) {
+        const visible = !hidden.has(part.id)
+        visibility.set(part.id, visible)
+        await onSetRealDetailPartVisible(item, part.id, visible)
+      }
+
+      detailExplodeByNode.set(item.id, requested.explode)
+      await onSetRealDetailExplode(item, requested.explode)
+
+      if (requested.partId) {
+        selectedDetailPartByNode.set(item.id, requested.partId)
+        onSelectRealDetailPart(item, requested.partId)
+      } else {
+        selectedDetailPartByNode.delete(item.id)
+        onSelectRealDetailPart(item, null)
+      }
+
+      const selected = requested.partId
+      ghostOtherPartsByNode.set(item.id, Boolean(selected && requested.ghostOthers))
+      onlyPartByNode.set(item.id, Boolean(selected && requested.onlyPart))
+      if (selected) {
+        await onGhostOtherRealDetailParts(item, selected, requested.ghostOthers)
+        await onShowOnlyRealDetailPart(item, selected, requested.onlyPart)
+      }
+      renderAnatomy()
+    }
+
+    if (syncAfter) syncUrl()
+  }
+
   const applyUrlState = () => {
     const nodeId = anatomyNodeIdFromSearch(location.search, nodeIds)
     mode = structureModeFromSearch(location.search, nodeIds)
@@ -520,6 +634,7 @@ export function createAnatomyController({
     render()
     const item = current()
     if (mode === 'anatomy' && !isDisabled && item?.focusAssemblyId) onFocusReference(item)
+    void applyDetailStateFromLocation()
   }
 
   const updateReferenceMarker = () => {
@@ -550,16 +665,56 @@ export function createAnatomyController({
   })
 
   render()
-  syncUrl()
   if (deepLinkedId && mode === 'anatomy' && !isDisabled) {
     const item = current()
     if (item?.focusAssemblyId) onFocusReference(item)
+  }
+  void applyDetailStateFromLocation({ syncAfter: true })
+
+  const selectRealDetailPart = (partId, { push = true, focus = false } = {}) => {
+    const item = current()
+    const detail = item ? detailAssetForNode(item.id) : null
+    if (!item || detail?.sourceKind !== 'generated-stl-package' || !loadedDetailNodes.has(item.id)) return false
+    const valid = partId === null || detail.sourceParts.some(part => part.id === partId)
+    if (!valid) return false
+
+    if (partId) selectedDetailPartByNode.set(item.id, partId)
+    else {
+      selectedDetailPartByNode.delete(item.id)
+      ghostOtherPartsByNode.delete(item.id)
+      onlyPartByNode.delete(item.id)
+    }
+    onSelectRealDetailPart(item, partId)
+    if (focus && partId) onFocusRealDetailPart(item, partId)
+    renderAnatomy()
+    syncUrl({ push })
+    return true
+  }
+
+  const hoverRealDetailPart = partId => {
+    const item = current()
+    const detail = item ? detailAssetForNode(item.id) : null
+    if (!item || detail?.sourceKind !== 'generated-stl-package' || !loadedDetailNodes.has(item.id)) return false
+    const valid = partId === null || detail.sourceParts.some(part => part.id === partId)
+    if (!valid) return false
+    if (partId) hoveredDetailPartByNode.set(item.id, partId)
+    else hoveredDetailPartByNode.delete(item.id)
+    onHoverRealDetailPart(item, partId)
+    realDetailPartsList?.querySelectorAll('[data-real-detail-part-id]').forEach(button => {
+      button.dataset.hovered = String(Boolean(partId && button.dataset.realDetailPartId === partId))
+    })
+    return true
   }
 
   const resetRealDetailControls = () => {
     detailExplodeByNode.clear()
     detailPartVisibilityByNode.clear()
+    selectedDetailPartByNode.clear()
+    hoveredDetailPartByNode.clear()
+    ghostOtherPartsByNode.clear()
+    onlyPartByNode.clear()
     renderAnatomy()
+    syncUrl()
   }
 
   return {
@@ -567,6 +722,8 @@ export function createAnatomyController({
     getCurrentId: () => currentId,
     setDisabled,
     updateReferenceMarker,
+    selectRealDetailPart,
+    hoverRealDetailPart,
     resetRealDetailControls,
     destroy: () => {
       unsubscribeLanguage()
@@ -577,6 +734,10 @@ export function createAnatomyController({
       failedDetailNodes.clear()
       detailExplodeByNode.clear()
       detailPartVisibilityByNode.clear()
+      selectedDetailPartByNode.clear()
+      hoveredDetailPartByNode.clear()
+      ghostOtherPartsByNode.clear()
+      onlyPartByNode.clear()
       referenceLayer?.replaceChildren()
     },
   }
