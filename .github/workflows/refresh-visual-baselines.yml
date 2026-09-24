@@ -1,0 +1,39 @@
+name: Refresh visual baselines
+
+on:
+  push:
+    branches: [feat/help-and-interaction-coverage]
+
+permissions:
+  contents: write
+
+jobs:
+  baselines:
+    if: ${{ !contains(github.event.head_commit.message, '[visual-baseline]') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: feat/help-and-interaction-coverage
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package.json
+      - run: npm install --no-fund --no-audit
+      - run: npx playwright install --with-deps chromium
+      - run: npm run verify:ci
+      - run: npx playwright test e2e/visual.spec.mjs --update-snapshots
+      - name: Commit visual baselines
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add e2e/visual.spec.mjs-snapshots/
+          if git diff --cached --quiet; then
+            echo "No baseline changes"
+            exit 0
+          fi
+          git commit -m "test(visual): refresh mobile tab baselines [visual-baseline]"
+          git push origin HEAD:feat/help-and-interaction-coverage
