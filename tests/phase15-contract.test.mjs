@@ -30,5 +30,6 @@ test('Phase 15 real detail is fetched fail-closed and loaded locally on demand',
   assert.match(realApp, /loadRealDetailForAnatomy/)
   assert.match(realApp, /state = setMode\(state, 'ghost'\)/)
   assert.match(html, /id="anatomyRealDetailCard"/)
-  assert.match(docs, /placement\/scale mapping.*approximate educational anchor/i)
+  assert.match(docs, /approximate educational anchor/i)
+  assert.match(docs, /placement\/scale mapping.*is approximate/i)
 })
