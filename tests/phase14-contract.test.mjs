@@ -19,5 +19,5 @@ test('Phase 14 schematic detail layer remains visual-only and uses official Thre
   assert.match(realApp, /proceduralDetailLayer\?\.setSectionEnabled/)
   assert.match(html, /id="schematicDetailBtn"/)
   assert.match(html, /id="schematicExplodeSlider"/)
-  assert.match(docs, /not manufacturing|not manufacturing or engineering-accurate/i)
+  assert.match(docs, /not suitable for manufacturing|manufacturing geometry/i)
 })
