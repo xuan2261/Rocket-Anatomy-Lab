@@ -66,7 +66,6 @@ async function runPrimaryTask(page, task) {
   await task.verify(page)
 
   expect(actions).toBeLessThanOrEqual(task.maxActions)
-  expect(window).not.toBeDefined
 
   return {
     task: task.name,
