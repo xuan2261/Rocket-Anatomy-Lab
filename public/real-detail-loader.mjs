@@ -55,6 +55,44 @@ export function createRealDetailLoader({ scene, modelBox, sectionPlane }) {
     })
   }
 
+  const preparePartMetadata = (root, asset) => {
+    if (asset.sourceKind !== 'generated-stl-package') return { parts: new Map(), packageExtent: 0 }
+
+    root.updateMatrixWorld(true)
+    const packageBox = new THREE.Box3().setFromObject(root)
+    const packageCenter = packageBox.getCenter(new THREE.Vector3())
+    const packageSize = packageBox.getSize(new THREE.Vector3())
+    const packageExtent = Math.max(packageSize.x, packageSize.y, packageSize.z)
+    const parts = new Map()
+    let fallbackIndex = 0
+
+    root.traverse(object => {
+      const sourcePart = object.userData?.sourcePart
+      if (!sourcePart || !object.isMesh || parts.has(sourcePart)) return
+
+      const partBox = new THREE.Box3().setFromObject(object)
+      const partCenter = partBox.getCenter(new THREE.Vector3())
+      const direction = partCenter.sub(packageCenter)
+      if (direction.lengthSq() < 1e-10) {
+        direction.set(
+          fallbackIndex % 2 === 0 ? 1 : -1,
+          (fallbackIndex % 3) - 1,
+          fallbackIndex % 2 === 0 ? 0.55 : -0.55,
+        )
+      }
+      fallbackIndex += 1
+      direction.normalize()
+
+      parts.set(sourcePart, {
+        object,
+        basePosition: object.position.clone(),
+        direction,
+      })
+    })
+
+    return { parts, packageExtent }
+  }
+
   const fitToAnchor = (root, asset) => {
     root.updateMatrixWorld(true)
     const sourceBox = new THREE.Box3().setFromObject(root)
@@ -80,10 +118,12 @@ export function createRealDetailLoader({ scene, modelBox, sectionPlane }) {
     root.userData.isQualifiedRealDetail = true
     root.userData.detailAssetId = asset.id
     root.userData.anatomyNodeId = asset.anatomyNodeId
+    root.userData.detailSourceKind = asset.sourceKind
     root.traverse(object => {
       object.userData.isQualifiedRealDetail = true
       object.userData.detailAssetId = asset.id
       object.userData.anatomyNodeId = asset.anatomyNodeId
+      object.userData.detailSourceKind = asset.sourceKind
     })
   }
 
@@ -98,11 +138,12 @@ export function createRealDetailLoader({ scene, modelBox, sectionPlane }) {
         root.name = `QualifiedDetail:${asset.id}`
         cloneMaterials(root)
         tagDetail(root, asset)
+        const explodeMeta = preparePartMetadata(root, asset)
         fitToAnchor(root, asset)
         applyClipping(root)
         root.visible = false
         scene.add(root)
-        return { asset, root, gltf }
+        return { asset, root, gltf, explodeMeta, explode: 0 }
       }).catch(error => {
         cache.delete(asset.id)
         throw error
@@ -121,6 +162,13 @@ export function createRealDetailLoader({ scene, modelBox, sectionPlane }) {
     return loaded
   }
 
+  const loadedForNode = async nodeId => {
+    const asset = detailAssetForNode(nodeId)
+    if (!asset) return null
+    const entry = cache.get(asset.id)
+    return entry ? entry.promise.catch(() => null) : null
+  }
+
   const hideAll = async () => {
     activeNodeId = null
     for (const entry of cache.values()) {
@@ -134,6 +182,48 @@ export function createRealDetailLoader({ scene, modelBox, sectionPlane }) {
     for (const entry of cache.values()) {
       entry.promise.then(loaded => applyClipping(loaded.root)).catch(() => {})
     }
+  }
+
+  const setExplode = async (nodeId, value) => {
+    const loaded = await loadedForNode(nodeId)
+    if (!loaded) return false
+    const amount = THREE.MathUtils.clamp(Number(value) || 0, 0, 1)
+    loaded.explode = amount
+
+    const distance = loaded.explodeMeta.packageExtent * 0.16 * amount
+    for (const meta of loaded.explodeMeta.parts.values()) {
+      meta.object.position.copy(meta.basePosition)
+      meta.object.position.addScaledVector(meta.direction, distance)
+    }
+    loaded.root.updateMatrixWorld(true)
+    return true
+  }
+
+  const setPartVisible = async (nodeId, partId, visible) => {
+    const loaded = await loadedForNode(nodeId)
+    const meta = loaded?.explodeMeta.parts.get(partId)
+    if (!meta) return false
+    meta.object.visible = Boolean(visible)
+    return true
+  }
+
+  const resetNode = async nodeId => {
+    const loaded = await loadedForNode(nodeId)
+    if (!loaded) return false
+    await setExplode(nodeId, 0)
+    for (const meta of loaded.explodeMeta.parts.values()) meta.object.visible = true
+    return true
+  }
+
+  const resetAll = async () => {
+    for (const asset of cache.keys()) {
+      const entry = cache.get(asset)
+      const loaded = await entry?.promise.catch(() => null)
+      if (!loaded) continue
+      await resetNode(loaded.asset.anatomyNodeId)
+      loaded.root.visible = false
+    }
+    activeNodeId = null
   }
 
   const hasDetail = nodeId => Boolean(detailAssetForNode(nodeId))
@@ -159,6 +249,10 @@ export function createRealDetailLoader({ scene, modelBox, sectionPlane }) {
     loadForNode,
     hideAll,
     setSectionEnabled,
+    setExplode,
+    setPartVisible,
+    resetNode,
+    resetAll,
     getActiveNodeId: () => activeNodeId,
     dispose,
   }
