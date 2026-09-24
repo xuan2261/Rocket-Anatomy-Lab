@@ -74,6 +74,10 @@ export function setTheme(theme, { persist = true } = {}) {
   if (persist) {
     try { localStorage.setItem(THEME_KEY, next) } catch {}
   }
+
+  window.dispatchEvent(new CustomEvent('rocket-anatomy:themechange', {
+    detail: { theme: next },
+  }))
   return next
 }
 
