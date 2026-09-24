@@ -480,12 +480,16 @@ dt { color: var(--muted); } dd { margin: 0; font-weight: 700; }
   }
   .control-center-header > div:first-child { display: none; }
   .control-tabs {
-    display: flex;
-    overflow-x: auto;
-    scrollbar-width: thin;
-    padding-bottom: 1px;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+    overflow: visible;
   }
-  .control-tabs button { min-width: 96px; }
+  .control-tabs button {
+    min-width: 0;
+    padding-inline: 4px;
+    font-size: 11px;
+  }
   .control-pane { padding: 10px; }
   .viewer-hint { display: none; }
 }
@@ -496,7 +500,7 @@ dt { color: var(--muted); } dd { margin: 0; font-weight: 700; }
   .theme-switcher button { min-width: 44px; padding-inline: 8px; font-size: 12px; }
   .language-switcher button { min-width: 40px; padding-inline: 7px; }
   .workspace { grid-template-rows: minmax(0, 55%) minmax(0, 45%); }
-  .control-tabs button { min-width: 88px; font-size: 11px; }
+  .control-tabs button { min-width: 0; font-size: 10px; }
   .annotation-marker { max-width: 132px; font-size: 11px; padding: 7px 9px; }
 }
 
