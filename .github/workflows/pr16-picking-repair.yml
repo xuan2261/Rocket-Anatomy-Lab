@@ -1,0 +1,77 @@
+name: PR16 verified picking repair
+
+on:
+  push:
+    branches: [feat/help-and-interaction-coverage]
+    paths: [.github/workflows/pr16-picking-repair.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Apply reviewed exact replacements
+        run: |
+          test "$(git hash-object public/real-app.mjs)" = 1995b890fb498b31873d8de1adba9a230b584b2f
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('public/real-app.mjs')
+          s = p.read_text()
+          old = "import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'"
+          assert s.count(old) == 1
+          s = s.replace(old, old + "\nimport { updateStaticIndexedBounds, firstVisibleAssemblyHit } from './assembly-picking.mjs'")
+          pos = s.index('function applyAssemblyMapping(')
+          before, tail = s[:pos], s[pos:]
+          old = '  root.updateMatrixWorld(true)\n  const modelBox = new THREE.Box3().setFromObject(root)'
+          assert old in tail
+          tail = tail.replace(old, '  updateStaticIndexedBounds(root)\n' + old, 1)
+          s = before + tail
+          old = 'raycaster.intersectObject(model, true).find(item => item.object.visible)'
+          assert s.count(old) == 1
+          s = s.replace(old, 'firstVisibleAssemblyHit(raycaster, model)')
+          p.write_text(s)
+          p = Path('package.json')
+          s = p.read_text()
+          old = '"qualify:real": "node scripts/phase3b-real-asset-gate.mjs"'
+          assert s.count(old) == 1
+          p.write_text(s.replace(old, '"qualify:real": "node scripts/phase3b-real-asset-gate.mjs && node --test tests/assembly-picking.qualify.mjs"'))
+          p = Path('e2e/visual.spec.mjs')
+          s = p.read_text()
+          old = "    await page.locator('[data-control-tab=\"objects\"]').click()\n    await page.locator('#tree .tree-select').nth(2).click()"
+          assert s.count(old) == 1
+          new = "    // Keep non-selected context in the overview comparison.\n    await page.locator('[data-control-tab=\"view\"]').click()\n    await page.locator('#resetBtn').click()\n" + old
+          p.write_text(s.replace(old, new))
+          PY
+      - run: npm install --no-fund --no-audit
+      - run: npm run verify:ci
+      - run: npx playwright install --with-deps chromium
+      - name: Verify every assembly using one real canvas click
+        run: npx playwright test e2e/interaction-matrix.spec.mjs --retries=0
+      - name: Refresh only intentionally changed camera snapshots
+        run: npx playwright test e2e/visual.spec.mjs --grep "selection visual contract" --update-snapshots
+      - run: npm run test:visual
+      - name: Commit only verified repairs and selected baselines
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/real-app.mjs package.json e2e/visual.spec.mjs e2e/visual.spec.mjs-snapshots/selection-*.png
+          git commit -m 'fix(viewer): use indexed bounds and visible-only picking'
+          git push origin HEAD:feat/help-and-interaction-coverage
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: pr16-picking-proof
+          path: |
+            playwright-report/
+            test-results/
+            e2e/visual.spec.mjs-snapshots/
+          retention-days: 7
