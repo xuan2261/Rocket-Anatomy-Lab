@@ -20,6 +20,7 @@ import { createTimelineController } from './timeline-controller.mjs'
 import { sectionPlaneDescriptor } from './core/section.js'
 import { createSectionController } from './section-controller.mjs'
 import { createLearningController } from './learning-controller.mjs'
+import { createAnatomyController } from './anatomy-controller.mjs'
 import { entityDescription, entityLabel, onLanguageChange, t } from './i18n.mjs'
 
 const EDUCATION_ASSET = './assets/saturn-v-education.glb'
@@ -61,6 +62,7 @@ let cameraTransition = null
 let overviewCamera = null
 let sectionController = null
 let learningController = null
+let anatomyController = null
 let sectionState = null
 let sectionModelBox = null
 let sectionCapMesh = null
@@ -552,6 +554,30 @@ function focusCameraOnGroup(groupId, durationMs) {
   startCameraTransition(sphere.center.clone().add(direction.multiplyScalar(distance)), sphere.center, durationMs)
 }
 
+
+function focusAnatomyReference(node, { inspect = false } = {}) {
+  if (!node?.focusAssemblyId || rendererKind !== 'assembly') return
+  cancelPresentationMotion()
+  timelineController?.resetSilently?.()
+  timelineMode = false
+  state = selectPart(state, node.focusAssemblyId)
+
+  if (inspect) {
+    state = setMode(state, 'xray')
+    sectionController?.applyPreset?.({
+      enabled: true,
+      axis: 'y',
+      position: node.normalizedPosition,
+      inverted: false,
+      capped: true,
+    })
+  }
+
+  const reducedMotion = timelineController?.getState?.().reducedMotion === true
+  focusCameraOnGroup(node.focusAssemblyId, reducedMotion ? 0 : 420)
+  renderUiAndModel()
+}
+
 function restoreOverviewCamera(durationMs) {
   if (!overviewCamera) return
   startCameraTransition(overviewCamera.position, overviewCamera.target, durationMs)
@@ -869,6 +895,7 @@ window.addEventListener('pagehide', () => {
   cancelAnimationFrame(frameId)
   timelineController?.destroy?.()
   learningController?.destroy?.()
+  anatomyController?.destroy?.()
   unsubscribeLanguage()
   sectionController?.destroy?.()
   resizeObserver.disconnect()
@@ -930,6 +957,11 @@ learningController = createLearningController({
     renderUiAndModel()
   },
   getAnnotationAnchor: annotationAnchorForGroup,
+})
+anatomyController = createAnatomyController({
+  disabled: rendererKind !== 'assembly',
+  onFocusReference: node => focusAnatomyReference(node),
+  onInspectReference: node => focusAnatomyReference(node, { inspect: true }),
 })
 renderUiAndModel()
 learningController.updateAnnotations()
