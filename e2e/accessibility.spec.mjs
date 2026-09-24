@@ -26,6 +26,19 @@ for (const language of ['vi', 'en']) {
         results.violations,
         `${language}/${panel}: ${results.violations.map(v => v.id).join(', ')}`,
       ).toEqual([])
+
+      if (panel === 'objects') {
+        await page.locator('[data-structure-mode="anatomy"]').click()
+        await expect(page.locator('#anatomyPanel')).toBeVisible()
+        const anatomyResults = await new AxeBuilder({ page })
+          .withTags(WCAG_AA_TAGS)
+          .analyze()
+        expect(
+          anatomyResults.violations,
+          `${language}/anatomy: ${anatomyResults.violations.map(v => v.id).join(', ')}`,
+        ).toEqual([])
+        await page.locator('[data-structure-mode="model"]').click()
+      }
     }
   })
 }
