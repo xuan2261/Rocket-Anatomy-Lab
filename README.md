@@ -3,6 +3,9 @@
 [![CI](https://github.com/xuan2261/Rocket-Anatomy-Lab/actions/workflows/ci.yml/badge.svg)](https://github.com/xuan2261/Rocket-Anatomy-Lab/actions/workflows/ci.yml)
 [![Deploy GitHub Pages](https://github.com/xuan2261/Rocket-Anatomy-Lab/actions/workflows/pages.yml/badge.svg)](https://github.com/xuan2261/Rocket-Anatomy-Lab/actions/workflows/pages.yml)
 
+> 🌐 **Xem trực tiếp sau khi bật GitHub Pages:** https://xuan2261.github.io/Rocket-Anatomy-Lab/  
+> Hướng dẫn bật Pages, deploy và kiểm smoke: [`docs/GITHUB_PAGES_SETUP.md`](docs/GITHUB_PAGES_SETUP.md).
+
 **Rocket Anatomy Lab - Xuan Bui Thanh - Khoa KTCS - HVHQ** là ứng dụng trực quan hóa 3D mang mục đích **giáo dục về phương tiện phóng vũ trụ dân sự**, sử dụng mô hình Saturn V chính thức của NASA làm tài nguyên minh họa. Ứng dụng tập trung vào quan sát cấu trúc số hóa, tách cụm trực quan, trình bày có hướng dẫn và mặt cắt/cutaway.
 
 > Các cụm trong ứng dụng là **vùng hình học phục vụ hiển thị** được tái cấu trúc từ mô hình nguồn. Chúng **không phải ranh giới tầng lịch sử** và không phải hướng dẫn lắp ráp ngoài đời thực.
@@ -220,6 +223,7 @@ Mô hình nguồn NASA được pin bằng provenance/fingerprint. Pipeline ki�
 - [`docs/VERIFICATION.md`](docs/VERIFICATION.md)
 - [`docs/TESTING.md`](docs/TESTING.md)
 - [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
+- [`docs/GITHUB_PAGES_SETUP.md`](docs/GITHUB_PAGES_SETUP.md)
 - [`docs/PHASE7_HARDENING.md`](docs/PHASE7_HARDENING.md)
 
 ## 🛰️ Nguồn mô hình NASA
