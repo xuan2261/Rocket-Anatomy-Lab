@@ -1,0 +1,32 @@
+name: PR16 runtime evidence
+
+on:
+  push:
+    branches: [feat/help-and-interaction-coverage]
+    paths: [.github/workflows/pr16-runtime-evidence.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: npm install --ignore-scripts --no-fund --no-audit
+      - run: npm run build
+      - name: Archive only source and runtime dependencies
+        run: |
+          git rev-parse HEAD > SOURCE_SHA.txt
+          tar -czf runtime-evidence.tgz SOURCE_SHA.txt public src tests e2e scripts docs README.md package.json tsconfig.json playwright.config.mjs node_modules/three/build node_modules/three/src node_modules/three/examples/jsm node_modules/three/package.json node_modules/@playwright/test node_modules/playwright node_modules/playwright-core node_modules/axe-core node_modules/@axe-core/playwright
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pr16-runtime-evidence
+          path: runtime-evidence.tgz
+          retention-days: 2
