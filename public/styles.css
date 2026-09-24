@@ -504,6 +504,38 @@ dt { color: var(--muted); } dd { margin: 0; font-weight: 700; }
   .annotation-marker { max-width: 132px; font-size: 11px; padding: 7px 9px; }
 }
 
+@media (any-pointer: coarse) {
+  button,
+  input[type="range"],
+  .language-switcher button,
+  .theme-switcher button,
+  .control-tabs button,
+  .text-button,
+  .tree-toggle-target,
+  .tree-select,
+  .source-details > summary,
+  .raw-debug summary,
+  .learning-disclosure,
+  .learning-controls button,
+  .annotation-marker {
+    min-height: 48px;
+  }
+
+  .language-switcher button,
+  .theme-switcher button {
+    min-width: 48px;
+  }
+
+  .tree-toggle-target {
+    width: 48px;
+    height: 48px;
+  }
+
+  .tree-row {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
   .motion-badge { border-color: color-mix(in srgb, var(--focus) 48%, var(--border)); color: var(--focus); }

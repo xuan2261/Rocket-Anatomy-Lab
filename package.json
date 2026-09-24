@@ -34,7 +34,8 @@
     "test:visual:update": "playwright test e2e/visual.spec.mjs --update-snapshots",
     "smoke:deployed": "node scripts/smoke-deployed.mjs",
     "qualify:quality": "node --test tests/phase7-contract.test.mjs",
-    "verify:phase7": "npm run verify:phase6 && npm run qualify:quality"
+    "verify:phase7": "npm run verify:phase6 && npm run qualify:quality",
+    "test:usability": "playwright test e2e/usability.spec.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",

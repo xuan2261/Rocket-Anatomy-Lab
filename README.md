@@ -22,8 +22,8 @@
 - **Guided Learning Phase 6**: 5 bài học semantic VI/EN, annotation 3D, Previous/Next, focus camera, preset Section/Cutaway và deep-link chia sẻ trạng thái bài học.
 - Fallback fail-closed: tính năng yêu cầu GLB thật sẽ bị vô hiệu thay vì mô phỏng sai.
 - Giao diện **song ngữ Việt/Anh (VI/EN)**, mặc định tiếng Việt, ghi nhớ lựa chọn bằng `localStorage` và cập nhật `html[lang]` cho công nghệ hỗ trợ.
-- Responsive cho desktop/mobile/landscape; nút đổi ngôn ngữ có vùng tương tác tối thiểu 44×44 px.
-- Test nhiều lớp: unit, integration/contract, E2E Playwright, **axe WCAG A/AA** và **visual regression** VI/EN trên desktop/mobile.
+- Responsive cho desktop/mobile/landscape; điều khiển chính tối thiểu 44 px và tăng lên 48 px trên thiết bị coarse-pointer.
+- Test nhiều lớp: unit, integration/contract, E2E Playwright, **axe WCAG A/AA**, **task-based usability guardrails** và visual regression VI/EN × Light/Dark trên desktop/mobile.
 - CI GitHub Actions và CD lên GitHub Pages.
 
 ## 🧱 Kiến trúc
@@ -122,6 +122,12 @@ npm run verify:phase7
 npm run test:a11y
 ```
 
+### Task-based usability regression
+
+```bash
+npm run test:usability
+```
+
 ### Visual regression
 
 ```bash
@@ -205,14 +211,15 @@ Mô hình nguồn NASA được pin bằng provenance/fingerprint. Pipeline ki�
 
 ## ♿ Accessibility
 
-- Điều khiển chính có vùng tương tác tối thiểu 44×44 px.
+- Điều khiển chính có vùng tương tác tối thiểu 44 px; coarse-pointer tăng lên 48 px cho các control quan trọng.
 - Native range giữ keyboard behavior.
 - Nút có `aria-label`/`aria-pressed` phù hợp; nhóm chuyển ngôn ngữ cũng cập nhật ARIA theo locale.
 - Canvas có mô tả truy cập.
 - Timeline hỗ trợ reduced-motion.
 - Axe tự động kiểm WCAG A/AA cho VI/EN trên desktop/mobile.
 - Layout không tràn ngang ở desktop/mobile/landscape đã kiểm.
-- Visual regression khóa UI chrome VI/EN bằng 4 golden snapshots CI-native.
+- Visual regression khóa UI chrome VI/EN × Light/Dark trên desktop/mobile bằng 8 golden snapshots CI-native.
+- Usability regression giữ 5 tác vụ chính trong cùng Control Center, không yêu cầu cuộn toàn trang và kiểm keyboard path của tablist.
 
 ## 📚 Tài liệu kỹ thuật
 
@@ -225,6 +232,7 @@ Mô hình nguồn NASA được pin bằng provenance/fingerprint. Pipeline ki�
 - [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
 - [`docs/GITHUB_PAGES_SETUP.md`](docs/GITHUB_PAGES_SETUP.md)
 - [`docs/PHASE7_HARDENING.md`](docs/PHASE7_HARDENING.md)
+- [`docs/PHASE9_USABILITY.md`](docs/PHASE9_USABILITY.md)
 
 ## 🛰️ Nguồn mô hình NASA
 
