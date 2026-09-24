@@ -22,9 +22,18 @@ test('Phase 15 qualified detail manifest is pinned and internally valid', () => 
   assert.match(lm.githubRawUrl, /raw\.githubusercontent\.com\/nasa\/NASA-3D-Resources/)
 })
 
-test('Phase 15 exposes detail only for explicitly qualified anatomy nodes', () => {
-  assert.equal(detailAssetForNode('sic-stage'), null)
-  assert.equal(detailAssetForNode('sii-stage'), null)
+test('Phase 15/16 detail lookup distinguishes direct GLB and generated stage packages', () => {
   assert.equal(detailAssetForNode('apollo-command-module'), null)
-  assert.ok(detailAssetForNode('apollo-lm-sla'))
+
+  const lunarModule = detailAssetForNode('apollo-lm-sla')
+  assert.ok(lunarModule)
+  assert.equal(lunarModule.sourceKind, 'direct-glb')
+
+  const stage1 = detailAssetForNode('sic-stage')
+  assert.ok(stage1)
+  assert.equal(stage1.sourceKind, 'generated-stl-package')
+
+  const stage2 = detailAssetForNode('sii-stage')
+  assert.ok(stage2)
+  assert.equal(stage2.sourceKind, 'generated-stl-package')
 })
