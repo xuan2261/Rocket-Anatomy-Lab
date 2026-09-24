@@ -1,16 +1,30 @@
 import {
-  anatomyChildren, anatomyNodeById, anatomyPath, anatomyText,
-  saturnVAnatomyManifest, validateAnatomyManifest,
+  anatomyChildren,
+  anatomyNodeById,
+  anatomyPath,
+  anatomyText,
+  saturnVAnatomyManifest,
+  validateAnatomyManifest,
 } from './core/anatomy.js'
+import {
+  anatomyNodeIdFromSearch,
+  anatomySearch,
+  filterAnatomyNodes,
+  structureModeFromSearch,
+} from './core/anatomyNavigation.js'
 import { getLanguage, onLanguageChange, t } from './i18n.mjs'
 
 export function createAnatomyController({
   disabled = false,
   onFocusReference = () => {},
   onInspectReference = () => {},
+  getReferenceAnchor = () => null,
 } = {}) {
   const errors = validateAnatomyManifest(saturnVAnatomyManifest)
   if (errors.length) throw new Error(`Anatomy manifest invalid: ${errors.join('; ')}`)
+
+  const nodeIds = saturnVAnatomyManifest.nodes.map(node => node.id)
+  const deepLinkedId = anatomyNodeIdFromSearch(location.search, nodeIds)
 
   const modeButtons = [...document.querySelectorAll('[data-structure-mode]')]
   const modelPanel = document.querySelector('#modelStructurePanel')
@@ -27,13 +41,32 @@ export function createAnatomyController({
   const focusBtn = document.querySelector('#anatomyFocusBtn')
   const inspectBtn = document.querySelector('#anatomyInspectBtn')
   const sourceLink = document.querySelector('#anatomySourceLink')
+  const searchInput = document.querySelector('#anatomySearchInput')
+  const searchStatus = document.querySelector('#anatomySearchStatus')
+  const evidenceSource = document.querySelector('#anatomyEvidenceSource')
+  const evidenceMapping = document.querySelector('#anatomyEvidenceMapping')
+  const copyBtn = document.querySelector('#anatomyCopyLinkBtn')
+  const shareStatus = document.querySelector('#anatomyShareStatus')
+  const referenceLayer = document.querySelector('#anatomyReferenceLayer')
 
-  let mode = 'model'
-  let currentId = saturnVAnatomyManifest.rootId
+  let mode = structureModeFromSearch(location.search, nodeIds)
+  let currentId = deepLinkedId ?? saturnVAnatomyManifest.rootId
   let isDisabled = Boolean(disabled)
+  let searchQuery = ''
+  let copyTimer = null
 
   const current = () => anatomyNodeById(saturnVAnatomyManifest, currentId)
   const localized = value => anatomyText(value, getLanguage())
+
+  const syncUrl = ({ push = false } = {}) => {
+    try {
+      const url = new URL(location.href)
+      url.search = anatomySearch(url.search, currentId, nodeIds, mode, getLanguage())
+      if (url.href === location.href) return
+      const method = push ? 'pushState' : 'replaceState'
+      history[method](history.state, '', url)
+    } catch {}
+  }
 
   const renderMode = () => {
     modeButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.structureMode === mode)))
@@ -56,100 +89,230 @@ export function createAnatomyController({
       button.className = 'anatomy-crumb'
       button.textContent = localized(crumb.label)
       if (crumb.id === item.id) button.setAttribute('aria-current', 'page')
-      button.addEventListener('click', () => {
-        currentId = crumb.id
-        render()
-        if (crumb.id !== saturnVAnatomyManifest.rootId) onFocusReference(crumb)
-      })
+      button.addEventListener('click', () => navigateTo(crumb.id, { push: true, focus: crumb.id !== saturnVAnatomyManifest.rootId }))
       breadcrumb.append(button)
     }
+  }
+
+  const createNodeButton = item => {
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.className = 'anatomy-node'
+    button.dataset.anatomyId = item.id
+
+    const row = document.createElement('span')
+    row.className = 'anatomy-node-heading'
+    const strong = document.createElement('strong')
+    strong.textContent = localized(item.label)
+    const badge = document.createElement('span')
+    badge.className = 'anatomy-kind-badge'
+    badge.textContent = t(`anatomy.kind.${item.kind}`)
+    row.append(strong, badge)
+
+    const copy = document.createElement('span')
+    copy.className = 'anatomy-node-copy'
+    copy.textContent = localized(item.description)
+
+    const childCount = anatomyChildren(saturnVAnatomyManifest, item.id).length
+    const meta = document.createElement('span')
+    meta.className = 'anatomy-node-meta'
+    meta.textContent = childCount ? t('anatomy.childCount', { count: childCount }) : t('anatomy.referenceLeaf')
+
+    button.append(row, copy, meta)
+    button.addEventListener('click', () => navigateTo(item.id, { push: true, focus: true }))
+    return button
   }
 
   const renderList = item => {
     if (!list) return
     list.replaceChildren()
-    for (const child of anatomyChildren(saturnVAnatomyManifest, item.id)) {
-      const button = document.createElement('button')
-      button.type = 'button'
-      button.className = 'anatomy-node'
-      button.dataset.anatomyId = child.id
+    const results = searchQuery
+      ? filterAnatomyNodes(saturnVAnatomyManifest, searchQuery, getLanguage())
+      : anatomyChildren(saturnVAnatomyManifest, item.id)
 
-      const row = document.createElement('span')
-      row.className = 'anatomy-node-heading'
-      const strong = document.createElement('strong')
-      strong.textContent = localized(child.label)
-      const badge = document.createElement('span')
-      badge.className = 'anatomy-kind-badge'
-      badge.textContent = t(`anatomy.kind.${child.kind}`)
-      row.append(strong, badge)
+    for (const child of results) list.append(createNodeButton(child))
 
-      const copy = document.createElement('span')
-      copy.className = 'anatomy-node-copy'
-      copy.textContent = localized(child.description)
-
-      const childCount = anatomyChildren(saturnVAnatomyManifest, child.id).length
-      const meta = document.createElement('span')
-      meta.className = 'anatomy-node-meta'
-      meta.textContent = childCount ? t('anatomy.childCount', { count: childCount }) : t('anatomy.referenceLeaf')
-
-      button.append(row, copy, meta)
-      button.addEventListener('click', () => {
-        currentId = child.id
-        render()
-        onFocusReference(child)
-      })
-      list.append(button)
+    if (searchStatus) {
+      searchStatus.textContent = searchQuery
+        ? t(results.length ? 'anatomy.searchCount' : 'anatomy.searchEmpty', { count: results.length })
+        : ''
     }
+  }
+
+  const renderReferenceMarker = item => {
+    if (!referenceLayer) return
+    referenceLayer.replaceChildren()
+    const visible = mode === 'anatomy' && !isDisabled && item.id !== saturnVAnatomyManifest.rootId && Boolean(item.focusAssemblyId)
+    referenceLayer.hidden = !visible
+    if (!visible) return
+
+    const marker = document.createElement('button')
+    marker.type = 'button'
+    marker.className = 'anatomy-reference-marker'
+    marker.dataset.anatomyReferenceId = item.id
+    marker.textContent = localized(item.label)
+    marker.setAttribute('aria-label', `${localized(item.label)} · ${t('anatomy.bindingApproximate')}`)
+    marker.addEventListener('click', () => onFocusReference(item))
+    referenceLayer.append(marker)
   }
 
   const renderAnatomy = () => {
     const item = current()
     if (!item) return
+    if (searchInput) searchInput.placeholder = t('anatomy.searchPlaceholder')
     if (title) title.textContent = localized(item.label)
     if (description) description.textContent = localized(item.description)
     if (kind) kind.textContent = t(`anatomy.kind.${item.kind}`)
-    if (binding) binding.textContent = t(item.binding === 'approximate-region' ? 'anatomy.bindingApproximate' : 'anatomy.bindingReference')
+    const mappingText = t(item.binding === 'approximate-region' ? 'anatomy.bindingApproximate' : 'anatomy.bindingReference')
+    if (binding) binding.textContent = mappingText
+    if (evidenceSource) evidenceSource.textContent = t('anatomy.evidenceOfficial')
+    if (evidenceMapping) evidenceMapping.textContent = mappingText
     if (backBtn) backBtn.disabled = !item.parentId
     const actionable = item.id !== saturnVAnatomyManifest.rootId && Boolean(item.focusAssemblyId)
     if (focusBtn) focusBtn.disabled = isDisabled || !actionable
     if (inspectBtn) inspectBtn.disabled = isDisabled || !actionable
+    if (copyBtn) copyBtn.disabled = false
     if (sourceLink) {
       sourceLink.href = item.sourceUrl
       sourceLink.textContent = t('anatomy.source', { source: item.sourceLabel })
     }
     renderBreadcrumb(item)
     renderList(item)
+    renderReferenceMarker(item)
   }
 
-  const render = () => { renderMode(); renderAnatomy() }
+  const render = () => {
+    renderMode()
+    renderAnatomy()
+  }
+
+  function navigateTo(nodeId, { push = false, focus = false } = {}) {
+    const item = anatomyNodeById(saturnVAnatomyManifest, nodeId)
+    if (!item) return
+    currentId = item.id
+    mode = 'anatomy'
+    searchQuery = ''
+    if (searchInput) searchInput.value = ''
+    render()
+    syncUrl({ push })
+    if (focus && !isDisabled && item.focusAssemblyId) onFocusReference(item)
+  }
+
+  const setMode = (next, { push = false } = {}) => {
+    mode = next === 'anatomy' ? 'anatomy' : 'model'
+    render()
+    syncUrl({ push })
+  }
 
   modeButtons.forEach(button => button.addEventListener('click', () => {
-    mode = button.dataset.structureMode === 'anatomy' ? 'anatomy' : 'model'
-    render()
+    setMode(button.dataset.structureMode, { push: true })
   }))
+
   backBtn?.addEventListener('click', () => {
     const item = current()
     if (!item?.parentId) return
-    currentId = item.parentId
-    render()
-    const parent = current()
-    if (parent && parent.id !== saturnVAnatomyManifest.rootId) onFocusReference(parent)
+    navigateTo(item.parentId, { push: true, focus: item.parentId !== saturnVAnatomyManifest.rootId })
   })
+
   focusBtn?.addEventListener('click', () => {
     const item = current()
     if (!isDisabled && item) onFocusReference(item)
   })
+
   inspectBtn?.addEventListener('click', () => {
     const item = current()
     if (!isDisabled && item) onInspectReference(item)
   })
 
-  const unsubscribeLanguage = onLanguageChange(() => render())
+  searchInput?.addEventListener('input', () => {
+    searchQuery = searchInput.value.trim()
+    renderAnatomy()
+  })
+
+  searchInput?.addEventListener('keydown', event => {
+    if (event.key === 'ArrowDown') {
+      const first = list?.querySelector('.anatomy-node')
+      if (first) {
+        event.preventDefault()
+        first.focus()
+      }
+    } else if (event.key === 'Escape' && searchInput.value) {
+      event.preventDefault()
+      searchInput.value = ''
+      searchQuery = ''
+      renderAnatomy()
+    }
+  })
+
+  copyBtn?.addEventListener('click', async () => {
+    syncUrl()
+    try {
+      await navigator.clipboard.writeText(location.href)
+      if (shareStatus) shareStatus.textContent = t('anatomy.copied')
+    } catch {
+      if (shareStatus) shareStatus.textContent = t('anatomy.copyFailed')
+    }
+    if (copyTimer !== null) window.clearTimeout(copyTimer)
+    copyTimer = window.setTimeout(() => {
+      if (shareStatus) shareStatus.textContent = ''
+    }, 2200)
+  })
+
+  const applyUrlState = () => {
+    const nodeId = anatomyNodeIdFromSearch(location.search, nodeIds)
+    mode = structureModeFromSearch(location.search, nodeIds)
+    currentId = nodeId ?? saturnVAnatomyManifest.rootId
+    searchQuery = ''
+    if (searchInput) searchInput.value = ''
+    render()
+    const item = current()
+    if (mode === 'anatomy' && !isDisabled && item?.focusAssemblyId) onFocusReference(item)
+  }
+
+  const updateReferenceMarker = () => {
+    if (isDisabled || mode !== 'anatomy' || !referenceLayer || referenceLayer.hidden) return
+    const item = current()
+    const marker = referenceLayer.querySelector('.anatomy-reference-marker')
+    if (!item || !marker) return
+    const anchor = getReferenceAnchor(item)
+    if (!anchor || anchor.visible === false || !Number.isFinite(anchor.x) || !Number.isFinite(anchor.y)) {
+      marker.hidden = true
+      return
+    }
+    marker.hidden = false
+    marker.style.left = `${anchor.x}px`
+    marker.style.top = `${anchor.y}px`
+  }
+
+  const setDisabled = value => {
+    isDisabled = Boolean(value)
+    render()
+  }
+
+  const handlePopState = () => applyUrlState()
+  window.addEventListener('popstate', handlePopState)
+  const unsubscribeLanguage = onLanguageChange(() => {
+    render()
+    syncUrl()
+  })
+
   render()
+  syncUrl()
+  if (deepLinkedId && mode === 'anatomy' && !isDisabled) {
+    const item = current()
+    if (item?.focusAssemblyId) onFocusReference(item)
+  }
+
   return {
     getMode: () => mode,
     getCurrentId: () => currentId,
-    setDisabled: value => { isDisabled = Boolean(value); render() },
-    destroy: () => unsubscribeLanguage(),
+    setDisabled,
+    updateReferenceMarker,
+    destroy: () => {
+      unsubscribeLanguage()
+      window.removeEventListener('popstate', handlePopState)
+      if (copyTimer !== null) window.clearTimeout(copyTimer)
+      referenceLayer?.replaceChildren()
+    },
   }
 }
