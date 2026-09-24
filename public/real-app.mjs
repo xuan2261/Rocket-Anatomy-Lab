@@ -84,7 +84,6 @@ let activeAxisKey = 'Y'
 const sectionPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
 
 const scene = new THREE.Scene()
-scene.background = new THREE.Color(0x0b111a)
 
 const camera = new THREE.PerspectiveCamera(42, 1, 0.01, 10000)
 camera.position.set(5, 4, 7)
@@ -101,13 +100,75 @@ controls.dampingFactor = 0.08
 controls.screenSpacePanning = true
 controls.addEventListener('start', () => { cameraTransition = null })
 
-scene.add(new THREE.HemisphereLight(0xbfd7ff, 0x17202d, 2.2))
+const hemisphere = new THREE.HemisphereLight(0xbfd7ff, 0x17202d, 2.2)
+scene.add(hemisphere)
 const key = new THREE.DirectionalLight(0xffffff, 3.0)
 key.position.set(4, 7, 5)
 scene.add(key)
 const fill = new THREE.DirectionalLight(0x7bbcff, 1.25)
 fill.position.set(-5, 1, -4)
 scene.add(fill)
+
+const selectionBox = new THREE.Box3()
+const selectionHelper = new THREE.Box3Helper(selectionBox, 0xffd166)
+selectionHelper.name = 'rocket-selection-frame'
+selectionHelper.visible = false
+selectionHelper.renderOrder = 40
+selectionHelper.raycast = () => {}
+selectionHelper.material.transparent = true
+selectionHelper.material.opacity = 0.94
+selectionHelper.material.depthTest = false
+selectionHelper.material.depthWrite = false
+scene.add(selectionHelper)
+
+const viewerSelectionEmissive = new THREE.Color(0xd99024)
+let viewerSelectionEmissiveIntensity = 1.05
+
+function cssToken(name, fallback) {
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+  return value || fallback
+}
+
+function applyViewerTheme(theme = document.documentElement.dataset.theme || 'light') {
+  const dark = theme === 'dark'
+  const background = cssToken('--viewer-scene-bg', dark ? '#0b111a' : '#d9e5ef')
+  const selection = cssToken('--viewer-selection', dark ? '#ffd166' : '#b45309')
+  const emissive = cssToken('--viewer-selection-emissive', dark ? '#d99024' : '#d97706')
+
+  scene.background = new THREE.Color(background)
+  selectionHelper.material.color.set(selection)
+  viewerSelectionEmissive.set(emissive)
+  viewerSelectionEmissiveIntensity = dark ? 1.08 : 0.78
+
+  if (dark) {
+    hemisphere.color.set(0xbfd7ff)
+    hemisphere.groundColor.set(0x17202d)
+    hemisphere.intensity = 2.2
+    key.color.set(0xffffff)
+    key.intensity = 3.0
+    fill.color.set(0x7bbcff)
+    fill.intensity = 1.25
+  } else {
+    hemisphere.color.set(0xf7fbff)
+    hemisphere.groundColor.set(0x90a5b8)
+    hemisphere.intensity = 2.45
+    key.color.set(0xffffff)
+    key.intensity = 2.55
+    fill.color.set(0x9bc7e8)
+    fill.intensity = 0.82
+  }
+
+  canvas.dataset.viewerTheme = dark ? 'dark' : 'light'
+  canvas.dataset.sceneBackground = background
+  if (model) applyStateToModel(activeAmountMap())
+}
+
+function handleViewerThemeChange(event) {
+  applyViewerTheme(event.detail?.theme)
+}
+
+window.addEventListener('rocket-anatomy:themechange', handleViewerThemeChange)
+applyViewerTheme()
 
 const raycaster = new THREE.Raycaster()
 const pointer = new THREE.Vector2()
@@ -261,8 +322,8 @@ function applyMaterialState(mesh, view) {
     if ('wireframe' in material) material.wireframe = view.wireframe ? true : (original.wireframe ?? false)
     if (material.emissive) {
       if (view.selected) {
-        material.emissive.setHex(0x315f82)
-        if (typeof material.emissiveIntensity === 'number') material.emissiveIntensity = 0.75
+        material.emissive.copy(viewerSelectionEmissive)
+        if (typeof material.emissiveIntensity === 'number') material.emissiveIntensity = viewerSelectionEmissiveIntensity
       } else if (original.emissive) {
         material.emissive.copy(original.emissive)
         if (typeof material.emissiveIntensity === 'number' && original.emissiveIntensity !== null) {
@@ -432,6 +493,28 @@ function parentLocalAxis(object, worldAxis) {
   return worldAxis.clone().applyQuaternion(parentWorldQuat.invert()).normalize()
 }
 
+function updateSelectionFrame() {
+  const selectedId = state.selectedId
+  const visibleSelection = selectedId
+    && !state.hiddenIds.has(selectedId)
+    && (!state.isolatedId || state.isolatedId === selectedId)
+
+  if (!visibleSelection) {
+    selectionHelper.visible = false
+    canvas.dataset.selectedAssembly = ''
+    return
+  }
+
+  selectionBox.makeEmpty()
+  for (const root of groupedNodes.get(selectedId) ?? []) {
+    if (root.visible) selectionBox.expandByObject(root)
+  }
+
+  selectionHelper.visible = !selectionBox.isEmpty()
+  if (selectionHelper.visible) selectionHelper.updateMatrixWorld(true)
+  canvas.dataset.selectedAssembly = selectionHelper.visible ? selectedId : ''
+}
+
 function applyStateToModel(amountOverride = null) {
   if (!model) return
   const views = deriveSemanticView(manifest, state)
@@ -454,6 +537,7 @@ function applyStateToModel(amountOverride = null) {
     }
   }
   model.updateMatrixWorld(true)
+  updateSelectionFrame()
 }
 
 const easeInOutCubic = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
@@ -1075,6 +1159,8 @@ window.addEventListener('pagehide', () => {
   sectionController?.destroy?.()
   resizeObserver.disconnect()
   controls.dispose()
+  window.removeEventListener('rocket-anatomy:themechange', handleViewerThemeChange)
+  selectionHelper.dispose()
   disposeSectionCutaway()
   if (model) {
     const geometries = new Set()
