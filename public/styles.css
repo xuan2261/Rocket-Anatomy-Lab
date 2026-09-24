@@ -949,7 +949,7 @@ dt { color: var(--muted); } dd { margin: 0; font-weight: 700; }
   .brand-suffix { display: none; }
   .theme-switcher button { min-width: 44px; padding-inline: 8px; font-size: 12px; }
   .language-switcher button { min-width: 40px; padding-inline: 7px; }
-  .workspace { grid-template-rows: minmax(0, 50%) minmax(0, 50%); }
+  .workspace { grid-template-rows: minmax(0, 45%) minmax(0, 55%); }
   .control-tabs button { min-width: 0; font-size: 10px; }
   .annotation-marker { max-width: 132px; font-size: 11px; padding: 7px 9px; }
 }
