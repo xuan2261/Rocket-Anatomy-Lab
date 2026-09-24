@@ -20,7 +20,7 @@
 - Fallback fail-closed: tính năng yêu cầu GLB thật sẽ bị vô hiệu thay vì mô phỏng sai.
 - Giao diện **song ngữ Việt/Anh (VI/EN)**, mặc định tiếng Việt, ghi nhớ lựa chọn bằng `localStorage` và cập nhật `html[lang]` cho công nghệ hỗ trợ.
 - Responsive cho desktop/mobile/landscape; nút đổi ngôn ngữ có vùng tương tác tối thiểu 44×44 px.
-- Test nhiều lớp: unit, integration/contract và E2E Playwright.
+- Test nhiều lớp: unit, integration/contract, E2E Playwright, **axe WCAG A/AA** và **visual regression** VI/EN trên desktop/mobile.
 - CI GitHub Actions và CD lên GitHub Pages.
 
 ## 🧱 Kiến trúc
@@ -107,10 +107,22 @@ http://127.0.0.1:4174
 npm test
 ```
 
-### Toàn bộ gate Phase 1 → Phase 6
+### Toàn bộ gate Phase 1 → Phase 7
 
 ```bash
-npm run verify:phase6
+npm run verify:phase7
+```
+
+### Accessibility automation
+
+```bash
+npm run test:a11y
+```
+
+### Visual regression
+
+```bash
+npm run test:visual
 ```
 
 ### Kiểm giao diện song ngữ VI/EN
@@ -149,8 +161,9 @@ Chi tiết: [`docs/TESTING.md`](docs/TESTING.md).
 
 - build + verify trên Node 22 và 24;
 - chạy toàn bộ unit/integration/contract;
-- chạy E2E Chromium bằng Playwright;
-- lưu Playwright HTML report thành artifact.
+- chạy E2E + accessibility Chromium bằng Playwright/axe;
+- chạy visual regression riêng trên Ubuntu 24.04 với golden snapshots sinh từ CI;
+- lưu Playwright reports thành artifacts.
 
 ### GitHub Pages
 
@@ -194,7 +207,9 @@ Mô hình nguồn NASA được pin bằng provenance/fingerprint. Pipeline ki�
 - Nút có `aria-label`/`aria-pressed` phù hợp; nhóm chuyển ngôn ngữ cũng cập nhật ARIA theo locale.
 - Canvas có mô tả truy cập.
 - Timeline hỗ trợ reduced-motion.
+- Axe tự động kiểm WCAG A/AA cho VI/EN trên desktop/mobile.
 - Layout không tràn ngang ở desktop/mobile/landscape đã kiểm.
+- Visual regression khóa UI chrome VI/EN bằng 4 golden snapshots CI-native.
 
 ## 📚 Tài liệu kỹ thuật
 
@@ -205,6 +220,7 @@ Mô hình nguồn NASA được pin bằng provenance/fingerprint. Pipeline ki�
 - [`docs/VERIFICATION.md`](docs/VERIFICATION.md)
 - [`docs/TESTING.md`](docs/TESTING.md)
 - [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
+- [`docs/PHASE7_HARDENING.md`](docs/PHASE7_HARDENING.md)
 
 ## 🛰️ Nguồn mô hình NASA
 
@@ -223,8 +239,8 @@ Dự án chỉ phục vụ **trực quan hóa và giáo dục dân sự**. Khôn
 
 ## 🗺️ Hướng phát triển
 
-1. Tạo pixel-baseline visual regression trong chính môi trường CI sau khi review screenshot Phase 6.
-2. Thêm kiểm thử accessibility tự động chuyên sâu (axe hoặc tương đương) cho desktop/mobile.
+1. Bật GitHub Pages một lần trong Settings để CD + deployed smoke bắt đầu chạy.
+2. Thực hiện manual accessibility review định kỳ bên cạnh axe automation.
 3. Thêm một mô hình không gian dân sự thứ hai để kiểm tính tổng quát của viewer/lesson engine.
 4. Tách lesson content thành data file có thể biên tập độc lập nếu số bài học tăng.
 5. Tiếp tục mở rộng annotation/callout nhưng giữ semantic-ID contract.
