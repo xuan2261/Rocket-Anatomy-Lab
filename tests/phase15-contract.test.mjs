@@ -18,6 +18,10 @@ test('Phase 15 real detail is fetched fail-closed and loaded locally on demand',
   assert.match(fetcher, /process\.exit\(2\)/)
 
   assert.match(loader, /detailAssetForNode/)
+  assert.match(loader, /DRACOLoader/)
+  assert.match(loader, /loader\.setDRACOLoader\(dracoLoader\)/)
+  assert.match(loader, /three@0\.186\.0\/examples\/jsm\/libs\/draco\//)
+  assert.match(loader, /dracoLoader\.dispose\(\)/)
   assert.match(loader, /loader\.loadAsync\(asset\.localUrl\)/)
   assert.doesNotMatch(loader, /assets\.science\.nasa\.gov|raw\.githubusercontent\.com/)
   assert.match(loader, /isQualifiedRealDetail/)
