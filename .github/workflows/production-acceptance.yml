@@ -1,0 +1,55 @@
+name: Production browser acceptance
+
+on:
+  push:
+    branches: [qa/production-acceptance-38292a5]
+    paths:
+      - scripts/accept-production.mjs
+      - .github/workflows/production-acceptance.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-acceptance-38292a5
+  cancel-in-progress: false
+
+jobs:
+  production:
+    if: github.repository == 'xuan2261/Rocket-Anatomy-Lab'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: npm install --no-fund --no-audit --ignore-scripts
+      - run: npx playwright install --with-deps chromium
+      - name: Rebuild the unchanged pinned domain and qualify the actual NASA GLB
+        run: npm run build && npm run fetch:source && npm run qualify:real
+      - name: Test the live Pages site, not a local server
+        run: node scripts/accept-production.mjs
+      - name: Upload acceptance evidence, including any failure traces
+        if: ${{ always() && !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: production-acceptance-38292a5
+          path: docs/acceptance/38292a5-production/
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Preserve public-site report and screenshots on the QA branch only
+        if: ${{ always() && !cancelled() }}
+        shell: bash
+        run: |
+          test -d docs/acceptance/38292a5-production || exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          find docs/acceptance/38292a5-production -maxdepth 1 -type f \( -name '*.md' -o -name '*.json' -o -name '*.png' \) -print0 | xargs -0 -r git add --
+          git diff --cached --quiet && exit 0
+          git commit -m "test(acceptance): preserve live Pages evidence [skip ci]"
+          git push origin HEAD:refs/heads/qa/production-acceptance-38292a5
