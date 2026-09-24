@@ -47,6 +47,69 @@ export const anatomySearch = (
   return value ? `?${value}` : ''
 }
 
+
+export type DetailInspectorState = {
+  partId: string | null
+  explode: number
+  hiddenPartIds: string[]
+  ghostOthers: boolean
+  onlyPart: boolean
+}
+
+export const detailInspectorStateFromSearch = (
+  search: string,
+  validPartIds: readonly string[],
+): DetailInspectorState => {
+  const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search)
+  const requestedPart = params.get('detailPart')
+  const partId = requestedPart && validPartIds.includes(requestedPart) ? requestedPart : null
+
+  const rawExplode = Number(params.get('detailExplode') ?? 0)
+  const explode = Number.isFinite(rawExplode)
+    ? Math.min(1, Math.max(0, Math.round(rawExplode) / 100))
+    : 0
+
+  const hiddenPartIds = (params.get('detailHidden') ?? '')
+    .split(',')
+    .map(value => value.trim())
+    .filter(value => validPartIds.includes(value))
+
+  return {
+    partId,
+    explode,
+    hiddenPartIds: [...new Set(hiddenPartIds)],
+    ghostOthers: params.get('detailGhost') === '1' && Boolean(partId),
+    onlyPart: params.get('detailOnly') === '1' && Boolean(partId),
+  }
+}
+
+export const detailInspectorSearch = (
+  search: string,
+  state: DetailInspectorState,
+): string => {
+  const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search)
+
+  if (state.partId) params.set('detailPart', state.partId)
+  else params.delete('detailPart')
+
+  const explodePercent = Math.round(Math.min(1, Math.max(0, state.explode)) * 100)
+  if (explodePercent > 0) params.set('detailExplode', String(explodePercent))
+  else params.delete('detailExplode')
+
+  const hidden = [...new Set(state.hiddenPartIds)].filter(Boolean)
+  if (hidden.length) params.set('detailHidden', hidden.join(','))
+  else params.delete('detailHidden')
+
+  if (state.ghostOthers && state.partId) params.set('detailGhost', '1')
+  else params.delete('detailGhost')
+
+  if (state.onlyPart && state.partId) params.set('detailOnly', '1')
+  else params.delete('detailOnly')
+
+  const value = params.toString()
+  return value ? `?${value}` : ''
+}
+
 export const filterAnatomyNodes = (
   manifest: AnatomyManifest,
   query: string,
