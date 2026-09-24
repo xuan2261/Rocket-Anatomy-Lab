@@ -109,18 +109,6 @@ const fill = new THREE.DirectionalLight(0x7bbcff, 1.25)
 fill.position.set(-5, 1, -4)
 scene.add(fill)
 
-const selectionBox = new THREE.Box3()
-const selectionHelper = new THREE.Box3Helper(selectionBox, 0xffd166)
-selectionHelper.name = 'rocket-selection-frame'
-selectionHelper.visible = false
-selectionHelper.renderOrder = 40
-selectionHelper.raycast = () => {}
-selectionHelper.material.transparent = true
-selectionHelper.material.opacity = 0.94
-selectionHelper.material.depthTest = false
-selectionHelper.material.depthWrite = false
-scene.add(selectionHelper)
-
 const viewerSelectionEmissive = new THREE.Color(0xd99024)
 let viewerSelectionEmissiveIntensity = 1.05
 
@@ -132,11 +120,9 @@ function cssToken(name, fallback) {
 function applyViewerTheme(theme = document.documentElement.dataset.theme || 'light') {
   const dark = theme === 'dark'
   const background = cssToken('--viewer-scene-bg', dark ? '#0b111a' : '#d9e5ef')
-  const selection = cssToken('--viewer-selection', dark ? '#ffd166' : '#b45309')
   const emissive = cssToken('--viewer-selection-emissive', dark ? '#d99024' : '#d97706')
 
   scene.background = new THREE.Color(background)
-  selectionHelper.material.color.set(selection)
   viewerSelectionEmissive.set(emissive)
   viewerSelectionEmissiveIntensity = dark ? 1.08 : 0.78
 
@@ -493,26 +479,13 @@ function parentLocalAxis(object, worldAxis) {
   return worldAxis.clone().applyQuaternion(parentWorldQuat.invert()).normalize()
 }
 
-function updateSelectionFrame() {
+function updateSelectionState() {
   const selectedId = state.selectedId
   const visibleSelection = selectedId
     && !state.hiddenIds.has(selectedId)
     && (!state.isolatedId || state.isolatedId === selectedId)
 
-  if (!visibleSelection) {
-    selectionHelper.visible = false
-    canvas.dataset.selectedAssembly = ''
-    return
-  }
-
-  selectionBox.makeEmpty()
-  for (const root of groupedNodes.get(selectedId) ?? []) {
-    if (root.visible) selectionBox.expandByObject(root)
-  }
-
-  selectionHelper.visible = !selectionBox.isEmpty()
-  if (selectionHelper.visible) selectionHelper.updateMatrixWorld(true)
-  canvas.dataset.selectedAssembly = selectionHelper.visible ? selectedId : ''
+  canvas.dataset.selectedAssembly = visibleSelection ? selectedId : ''
 }
 
 function applyStateToModel(amountOverride = null) {
@@ -537,7 +510,7 @@ function applyStateToModel(amountOverride = null) {
     }
   }
   model.updateMatrixWorld(true)
-  updateSelectionFrame()
+  updateSelectionState()
 }
 
 const easeInOutCubic = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
@@ -1160,7 +1133,6 @@ window.addEventListener('pagehide', () => {
   resizeObserver.disconnect()
   controls.dispose()
   window.removeEventListener('rocket-anatomy:themechange', handleViewerThemeChange)
-  selectionHelper.dispose()
   disposeSectionCutaway()
   if (model) {
     const geometries = new Set()
