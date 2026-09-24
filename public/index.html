@@ -3,19 +3,39 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="color-scheme" content="dark" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="theme-color" id="themeColor" content="#f4f7fb" />
   <meta name="description" content="Rocket Anatomy Lab — trình trực quan hóa 3D giáo dục cho mô hình Saturn V của NASA." />
   <title>Rocket Anatomy Lab - Xuan Bui Thanh - Khoa KTCS - HVHQ</title>
+  <script>
+    (() => {
+      try {
+        const stored = localStorage.getItem('rocket-anatomy-theme')
+        const theme = stored === 'light' || stored === 'dark'
+          ? stored
+          : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        document.documentElement.dataset.theme = theme
+      } catch {
+        document.documentElement.dataset.theme = 'light'
+      }
+    })()
+  </script>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
+  <a class="skip-link" href="#viewport" data-workspace-label="skipToViewer">Bỏ qua đến trình xem 3D</a>
   <div class="app-shell">
     <header class="topbar">
-      <div>
+      <div class="brand-block">
         <p class="eyebrow" data-i18n="app.eyebrow">TRỰC QUAN 3D GIÁO DỤC</p>
         <h1 data-i18n="app.title">Rocket Anatomy Lab - Xuan Bui Thanh - Khoa KTCS - HVHQ</h1>
       </div>
+
       <div class="topbar-actions">
+        <div class="theme-switcher" role="group" aria-label="Giao diện" data-workspace-aria="themeGroup">
+          <button type="button" data-theme-value="light" aria-pressed="true" data-workspace-label="themeLight">Sáng</button>
+          <button type="button" data-theme-value="dark" aria-pressed="false" data-workspace-label="themeDark">Tối</button>
+        </div>
         <div class="language-switcher" role="group" aria-label="Ngôn ngữ">
           <button type="button" data-language="vi" aria-pressed="true" title="Tiếng Việt">VI</button>
           <button type="button" data-language="en" aria-pressed="false" title="English">EN</button>
@@ -24,24 +44,7 @@
       </div>
     </header>
 
-    <main class="workspace">
-      <aside class="panel structure-panel" data-i18n-aria-label="structure.panelAria" aria-label="Bảng cấu trúc">
-        <div class="panel-heading">
-          <div>
-            <span class="panel-kicker" data-i18n="structure.kicker">CẤU TRÚC</span>
-            <h2 data-i18n="structure.title">Các cụm giáo dục</h2>
-          </div>
-          <button class="text-button" id="showAllBtn" type="button" data-i18n="structure.showAll">Hiện tất cả</button>
-        </div>
-        <div id="tree" class="tree" role="tree" data-i18n-aria-label="structure.treeAria" aria-label="Cấu trúc mô hình"></div>
-        <div class="source-note" data-i18n="structure.sourceNote">Trình xem ưu tiên GLB giáo dục đã được tái cấu trúc cục bộ với các nhánh có thể biến đổi độc lập. Nếu không có, tài nguyên trình bày NASA đã xác minh vẫn được dùng ở chế độ chỉ quan sát.</div>
-        <details class="raw-debug">
-          <summary data-i18n="structure.rawSummary">Danh sách đối tượng gốc</summary>
-          <p data-i18n="structure.rawHelp">Chế độ gỡ lỗi: tên đối tượng nhập/tái cấu trúc → cụm giáo dục đang hoạt động.</p>
-          <div id="rawInventory" class="raw-inventory"></div>
-        </details>
-      </aside>
-
+    <main class="workspace" id="mainWorkspace">
       <section class="viewer-panel" data-i18n-aria-label="viewer.panelAria" aria-label="Trình xem 3D">
         <canvas id="viewport" tabindex="0" data-i18n-aria-label="viewer.canvasAria" aria-label="Mô hình phương tiện phóng vũ trụ 3D giáo dục. Kéo để xoay; lăn chuột để thu phóng; bấm vào một phần để chọn."></canvas>
         <div id="annotationLayer" class="annotation-layer" data-i18n-aria-label="learning.annotationLayerAria" aria-label="Các điểm chú thích giáo dục"></div>
@@ -49,106 +52,158 @@
         <div class="mode-chip" id="modeChip" data-i18n="viewer.mode.normal">Bình thường</div>
       </section>
 
-      <aside class="panel inspector-panel" aria-live="polite">
-        <span class="panel-kicker" data-i18n="inspector.kicker">THÔNG TIN</span>
-        <h2 id="inspectorTitle" data-i18n="inspector.noneTitle">Chưa chọn</h2>
-        <p id="inspectorDescription" data-i18n="inspector.noneDescription">Chọn một cụm giáo dục trên mô hình hoặc trong cây cấu trúc.</p>
-        <dl class="state-grid">
-          <div><dt data-i18n="inspector.visibility">Hiển thị</dt><dd id="visibilityValue">—</dd></div>
-          <div><dt data-i18n="inspector.viewMode">Chế độ xem</dt><dd id="modeValue" data-i18n="viewer.mode.normal">Bình thường</dd></div>
-          <div><dt data-i18n="inspector.explode">Mức tách cụm</dt><dd id="explodeValue">0%</dd></div>
-        </dl>
-        <div class="inspector-actions">
-          <button id="isolateBtn" type="button" disabled data-i18n="inspector.isolate">Cô lập</button>
-          <button id="hideBtn" type="button" disabled data-i18n="inspector.hide">Ẩn</button>
+      <aside class="control-center panel" aria-label="Trung tâm điều khiển" data-workspace-aria="controlCenterAria">
+        <div class="control-center-header">
+          <div>
+            <span class="panel-kicker" data-workspace-label="controlKicker">ĐIỀU KHIỂN</span>
+            <strong id="controlCenterTitle">Đối tượng</strong>
+          </div>
+          <div class="control-tabs" role="tablist" aria-label="Nhóm điều khiển" data-workspace-aria="tablistAria">
+            <button id="tabObjects" type="button" role="tab" aria-selected="true" aria-controls="paneObjects" data-control-tab="objects" data-workspace-tab-label="objects">Đối tượng</button>
+            <button id="tabView" type="button" role="tab" aria-selected="false" aria-controls="paneView" data-control-tab="view" data-workspace-tab-label="view">Góc nhìn</button>
+            <button id="tabTimeline" type="button" role="tab" aria-selected="false" aria-controls="paneTimeline" data-control-tab="timeline" data-workspace-tab-label="timeline">Trình bày</button>
+            <button id="tabLearning" type="button" role="tab" aria-selected="false" aria-controls="paneLearning" data-control-tab="learning" data-workspace-tab-label="learning">Bài học</button>
+            <button id="tabSection" type="button" role="tab" aria-selected="false" aria-controls="paneSection" data-control-tab="section" data-workspace-tab-label="section">Mặt cắt</button>
+          </div>
         </div>
+
+        <section id="paneObjects" class="control-pane" role="tabpanel" aria-labelledby="tabObjects" data-control-pane="objects">
+          <div class="panel-heading compact-heading">
+            <div>
+              <span class="panel-kicker" data-i18n="structure.kicker">CẤU TRÚC</span>
+              <h2 data-i18n="structure.title">Các cụm giáo dục</h2>
+            </div>
+            <button class="text-button" id="showAllBtn" type="button" data-i18n="structure.showAll">Hiện tất cả</button>
+          </div>
+          <div id="tree" class="tree" role="tree" data-i18n-aria-label="structure.treeAria" aria-label="Cấu trúc mô hình"></div>
+
+          <div class="inspector-card" aria-live="polite">
+            <span class="panel-kicker" data-i18n="inspector.kicker">THÔNG TIN</span>
+            <h2 id="inspectorTitle" data-i18n="inspector.noneTitle">Chưa chọn</h2>
+            <p id="inspectorDescription" data-i18n="inspector.noneDescription">Chọn một cụm giáo dục trên mô hình hoặc trong cây cấu trúc.</p>
+            <dl class="state-grid">
+              <div><dt data-i18n="inspector.visibility">Hiển thị</dt><dd id="visibilityValue">—</dd></div>
+              <div><dt data-i18n="inspector.viewMode">Chế độ xem</dt><dd id="modeValue" data-i18n="viewer.mode.normal">Bình thường</dd></div>
+              <div><dt data-i18n="inspector.explode">Mức tách cụm</dt><dd id="explodeValue">0%</dd></div>
+            </dl>
+            <div class="inspector-actions">
+              <button id="isolateBtn" type="button" disabled data-i18n="inspector.isolate">Cô lập</button>
+              <button id="hideBtn" type="button" disabled data-i18n="inspector.hide">Ẩn</button>
+            </div>
+          </div>
+
+          <details class="source-details">
+            <summary data-workspace-label="sourceDebug">Nguồn & gỡ lỗi</summary>
+            <p class="source-note" data-i18n="structure.sourceNote">Trình xem ưu tiên GLB giáo dục đã được tái cấu trúc cục bộ với các nhánh có thể biến đổi độc lập. Nếu không có, tài nguyên trình bày NASA đã xác minh vẫn được dùng ở chế độ chỉ quan sát.</p>
+            <details class="raw-debug">
+              <summary data-i18n="structure.rawSummary">Danh sách đối tượng gốc</summary>
+              <p data-i18n="structure.rawHelp">Chế độ gỡ lỗi: tên đối tượng nhập/tái cấu trúc → cụm giáo dục đang hoạt động.</p>
+              <div id="rawInventory" class="raw-inventory"></div>
+            </details>
+          </details>
+        </section>
+
+        <section id="paneView" class="control-pane" role="tabpanel" aria-labelledby="tabView" data-control-pane="view" hidden>
+          <div class="pane-heading">
+            <span class="panel-kicker" data-workspace-label="viewKicker">GÓC NHÌN</span>
+            <h2 data-workspace-label="viewTitle">Quan sát mô hình</h2>
+            <p data-workspace-label="viewDescription">Đổi chế độ hiển thị, mức tách cụm và đặt lại góc nhìn tại cùng một vị trí.</p>
+          </div>
+          <div class="control-dock" data-i18n-aria-label="controls.aria" aria-label="Điều khiển trình xem">
+            <div class="segmented" data-i18n-aria-label="controls.modeAria" aria-label="Chế độ xem">
+              <button type="button" data-mode="normal" aria-pressed="true" data-i18n="viewer.mode.normal">Bình thường</button>
+              <button type="button" data-mode="ghost" aria-pressed="false" data-i18n="viewer.mode.ghost">Bóng mờ</button>
+              <button type="button" data-mode="xray" aria-pressed="false" data-i18n="viewer.mode.xray">X-quang</button>
+            </div>
+            <label class="slider-row" for="explodeSlider">
+              <span data-i18n="viewer.assembled">Lắp hoàn chỉnh</span>
+              <input id="explodeSlider" type="range" min="0" max="100" value="0" data-i18n-aria-label="viewer.explodeAria" aria-label="Mức tách các cụm" />
+              <span data-i18n="viewer.exploded">Tách cụm</span>
+            </label>
+            <button id="resetBtn" type="button" class="primary-action" data-i18n="viewer.reset">Đặt lại góc nhìn</button>
+          </div>
+        </section>
+
+        <section id="paneTimeline" class="control-pane" role="tabpanel" aria-labelledby="tabTimeline" data-control-pane="timeline" hidden>
+          <div class="timeline-dock" data-i18n-aria-label="timeline.aria" aria-label="Dòng thời gian trình bày số có hướng dẫn">
+            <div class="timeline-heading">
+              <div>
+                <span class="panel-kicker" data-i18n="timeline.kicker">TRÌNH BÀY CÓ HƯỚNG DẪN</span>
+                <strong id="timelineStatus" role="status" aria-live="polite" data-i18n="timeline.initial">Trạng thái lắp ghép ban đầu</strong>
+              </div>
+              <span class="motion-badge" id="timelineMotionBadge" data-i18n="timeline.motionStandard">Chuyển động: tiêu chuẩn</span>
+            </div>
+            <div class="timeline-controls">
+              <div class="button-pair">
+                <button id="timelinePreviousBtn" type="button" data-i18n="timeline.previous" data-i18n-aria-label="timeline.previousAria" aria-label="Bước trình bày trước">Trước</button>
+                <button id="timelineNextBtn" type="button" data-i18n="timeline.next" data-i18n-aria-label="timeline.nextAria" aria-label="Bước trình bày tiếp theo">Tiếp</button>
+              </div>
+              <button id="timelinePlayBtn" type="button" class="primary-action" data-i18n="timeline.play" data-i18n-aria-label="timeline.playAria" aria-label="Phát trình bày có hướng dẫn" aria-pressed="false">Phát</button>
+              <label class="timeline-slider-row" for="timelineSlider">
+                <span class="control-label" data-i18n="timeline.sliderLabel">Bước trình bày</span>
+                <input id="timelineSlider" type="range" min="0" max="5" step="1" value="0" aria-describedby="timelineStatus" />
+              </label>
+              <button id="timelineDirectionBtn" type="button" data-i18n="timeline.directionDisassemble" data-i18n-aria-label="timeline.directionDisassembleAria" aria-label="Hướng trình bày: tháo rời" aria-pressed="false">Hướng: Tháo rời</button>
+              <button id="timelineRestartBtn" type="button" data-i18n="timeline.restart" data-i18n-aria-label="timeline.restartAria" aria-label="Khởi động lại từ trạng thái lắp ghép ban đầu">Khởi động lại</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="paneLearning" class="control-pane" role="tabpanel" aria-labelledby="tabLearning" data-control-pane="learning" hidden>
+          <div class="learning-dock" data-i18n-aria-label="learning.aria" aria-label="Bài học giáo dục có hướng dẫn">
+            <div class="learning-heading">
+              <button id="learningToggleBtn" class="learning-disclosure" type="button" aria-expanded="true" aria-controls="learningPanelBody" data-i18n="learning.toggle">BÀI HỌC CÓ HƯỚNG DẪN</button>
+              <strong id="learningProgress" aria-live="polite">1/5</strong>
+            </div>
+            <div id="learningPanelBody" class="learning-body">
+              <div class="learning-copy">
+                <span class="panel-kicker" data-i18n="learning.kicker">GIẢI PHẪU SỐ HÓA</span>
+                <h2 id="learningTitle">Cụm đáy</h2>
+                <p id="learningDescription">Chọn bài học để khám phá các vùng hình học giáo dục của mô hình số.</p>
+              </div>
+              <div class="learning-controls">
+                <div class="button-pair">
+                  <button id="learningPreviousBtn" type="button" data-i18n="learning.previous">Bài trước</button>
+                  <button id="learningNextBtn" type="button" data-i18n="learning.next">Bài tiếp</button>
+                </div>
+                <button id="learningFocusBtn" type="button" data-i18n="learning.focus">Tập trung</button>
+                <button id="learningApplyViewBtn" type="button" class="primary-action" data-i18n="learning.applyView">Áp dụng góc nhìn học tập</button>
+                <button id="learningAnnotationsBtn" type="button" aria-pressed="true" data-i18n="learning.annotationsOn">Chú thích: Bật</button>
+                <button id="learningCopyLinkBtn" type="button" data-i18n="learning.copyLink">Sao chép liên kết bài học</button>
+              </div>
+              <span id="learningShareStatus" class="learning-share-status" role="status" aria-live="polite"></span>
+            </div>
+          </div>
+        </section>
+
+        <section id="paneSection" class="control-pane" role="tabpanel" aria-labelledby="tabSection" data-control-pane="section" hidden>
+          <div class="section-dock" data-i18n-aria-label="section.aria" aria-label="Điều khiển mặt cắt và quan sát bên trong">
+            <div class="section-heading">
+              <div>
+                <span class="panel-kicker" data-i18n="section.kicker">MẶT CẮT / QUAN SÁT BÊN TRONG</span>
+                <strong id="sectionStatus" role="status" aria-live="polite" data-i18n="section.offStatus">Mặt cắt đang tắt</strong>
+              </div>
+            </div>
+            <div class="section-controls">
+              <button id="sectionToggleBtn" type="button" class="primary-action" aria-pressed="false" data-i18n="section.toggleOff">Mặt cắt: Tắt</button>
+              <div class="section-axis-group" role="group" data-i18n-aria-label="section.axisAria" aria-label="Trục mặt cắt">
+                <button type="button" data-section-axis="x" aria-pressed="false">X</button>
+                <button type="button" data-section-axis="y" aria-pressed="true">Y</button>
+                <button type="button" data-section-axis="z" aria-pressed="false">Z</button>
+              </div>
+              <label class="section-slider-row" for="sectionSlider">
+                <span class="control-label" data-i18n="section.sliderLabel">Vị trí mặt phẳng cắt</span>
+                <input id="sectionSlider" type="range" min="0" max="100" step="1" value="50" aria-describedby="sectionStatus" data-i18n-aria-label="section.sliderLabel" aria-label="Vị trí mặt phẳng cắt" />
+              </label>
+              <button id="sectionInvertBtn" type="button" aria-pressed="false" data-i18n="section.directionStandard">Hướng: Chuẩn</button>
+              <button id="sectionCapBtn" type="button" aria-pressed="true" data-i18n="section.capOn">Nắp trực quan: Bật</button>
+            </div>
+          </div>
+        </section>
       </aside>
     </main>
-
-    <footer class="control-stack">
-      <section class="timeline-dock" data-i18n-aria-label="timeline.aria" aria-label="Dòng thời gian trình bày số có hướng dẫn">
-        <div class="timeline-heading">
-          <div>
-            <span class="panel-kicker" data-i18n="timeline.kicker">TRÌNH BÀY CÓ HƯỚNG DẪN</span>
-            <strong id="timelineStatus" role="status" aria-live="polite" data-i18n="timeline.initial">Trạng thái lắp ghép ban đầu</strong>
-          </div>
-          <span class="motion-badge" id="timelineMotionBadge" data-i18n="timeline.motionStandard">Chuyển động: tiêu chuẩn</span>
-        </div>
-        <div class="timeline-controls">
-          <button id="timelinePreviousBtn" type="button" data-i18n="timeline.previous" data-i18n-aria-label="timeline.previousAria" aria-label="Bước trình bày trước">Trước</button>
-          <button id="timelinePlayBtn" type="button" data-i18n="timeline.play" data-i18n-aria-label="timeline.playAria" aria-label="Phát trình bày có hướng dẫn" aria-pressed="false">Phát</button>
-          <button id="timelineNextBtn" type="button" data-i18n="timeline.next" data-i18n-aria-label="timeline.nextAria" aria-label="Bước trình bày tiếp theo">Tiếp</button>
-          <button id="timelineRestartBtn" type="button" data-i18n="timeline.restart" data-i18n-aria-label="timeline.restartAria" aria-label="Khởi động lại từ trạng thái lắp ghép ban đầu">Khởi động lại</button>
-          <label class="timeline-slider-row" for="timelineSlider">
-            <span class="sr-only" data-i18n="timeline.sliderLabel">Bước trình bày</span>
-            <input id="timelineSlider" type="range" min="0" max="5" step="1" value="0" aria-describedby="timelineStatus" />
-          </label>
-          <button id="timelineDirectionBtn" type="button" data-i18n="timeline.directionDisassemble" data-i18n-aria-label="timeline.directionDisassembleAria" aria-label="Hướng trình bày: tháo rời" aria-pressed="false">Hướng: Tháo rời</button>
-        </div>
-      </section>
-
-
-      <section class="learning-dock" data-i18n-aria-label="learning.aria" aria-label="Bài học giáo dục có hướng dẫn">
-        <div class="learning-heading">
-          <button id="learningToggleBtn" class="learning-disclosure" type="button" aria-expanded="true" aria-controls="learningPanelBody" data-i18n="learning.toggle">BÀI HỌC CÓ HƯỚNG DẪN</button>
-          <strong id="learningProgress" aria-live="polite">1/5</strong>
-        </div>
-        <div id="learningPanelBody" class="learning-body">
-          <div class="learning-copy">
-            <span class="panel-kicker" data-i18n="learning.kicker">GIẢI PHẪU SỐ HÓA</span>
-            <h2 id="learningTitle">Cụm đáy</h2>
-            <p id="learningDescription">Chọn bài học để khám phá các vùng hình học giáo dục của mô hình số.</p>
-          </div>
-          <div class="learning-controls">
-            <button id="learningPreviousBtn" type="button" data-i18n="learning.previous">Bài trước</button>
-            <button id="learningFocusBtn" type="button" data-i18n="learning.focus">Tập trung</button>
-            <button id="learningApplyViewBtn" type="button" data-i18n="learning.applyView">Áp dụng góc nhìn học tập</button>
-            <button id="learningAnnotationsBtn" type="button" aria-pressed="true" data-i18n="learning.annotationsOn">Chú thích: Bật</button>
-            <button id="learningCopyLinkBtn" type="button" data-i18n="learning.copyLink">Sao chép liên kết bài học</button>
-            <button id="learningNextBtn" type="button" data-i18n="learning.next">Bài tiếp</button>
-          </div>
-          <span id="learningShareStatus" class="learning-share-status" role="status" aria-live="polite"></span>
-        </div>
-      </section>
-
-      <section class="section-dock" data-i18n-aria-label="section.aria" aria-label="Điều khiển mặt cắt và quan sát bên trong">
-        <div class="section-heading">
-          <div>
-            <span class="panel-kicker" data-i18n="section.kicker">MẶT CẮT / QUAN SÁT BÊN TRONG</span>
-            <strong id="sectionStatus" role="status" aria-live="polite" data-i18n="section.offStatus">Mặt cắt đang tắt</strong>
-          </div>
-        </div>
-        <div class="section-controls">
-          <button id="sectionToggleBtn" type="button" aria-pressed="false" data-i18n="section.toggleOff">Mặt cắt: Tắt</button>
-          <div class="section-axis-group" role="group" data-i18n-aria-label="section.axisAria" aria-label="Trục mặt cắt">
-            <button type="button" data-section-axis="x" aria-pressed="false">X</button>
-            <button type="button" data-section-axis="y" aria-pressed="true">Y</button>
-            <button type="button" data-section-axis="z" aria-pressed="false">Z</button>
-          </div>
-          <label class="section-slider-row" for="sectionSlider">
-            <span class="sr-only" data-i18n="section.sliderLabel">Vị trí mặt phẳng cắt</span>
-            <input id="sectionSlider" type="range" min="0" max="100" step="1" value="50" aria-describedby="sectionStatus" data-i18n-aria-label="section.sliderLabel" aria-label="Vị trí mặt phẳng cắt" />
-          </label>
-          <button id="sectionInvertBtn" type="button" aria-pressed="false" data-i18n="section.directionStandard">Hướng: Chuẩn</button>
-          <button id="sectionCapBtn" type="button" aria-pressed="true" data-i18n="section.capOn">Nắp trực quan: Bật</button>
-        </div>
-      </section>
-
-      <div class="control-dock" data-i18n-aria-label="controls.aria" aria-label="Điều khiển trình xem">
-        <div class="segmented" data-i18n-aria-label="controls.modeAria" aria-label="Chế độ xem">
-          <button type="button" data-mode="normal" aria-pressed="true" data-i18n="viewer.mode.normal">Bình thường</button>
-          <button type="button" data-mode="ghost" aria-pressed="false" data-i18n="viewer.mode.ghost">Bóng mờ</button>
-          <button type="button" data-mode="xray" aria-pressed="false" data-i18n="viewer.mode.xray">X-quang</button>
-        </div>
-        <label class="slider-row" for="explodeSlider">
-          <span data-i18n="viewer.assembled">Lắp hoàn chỉnh</span>
-          <input id="explodeSlider" type="range" min="0" max="100" value="0" data-i18n-aria-label="viewer.explodeAria" aria-label="Mức tách các cụm" />
-          <span data-i18n="viewer.exploded">Tách cụm</span>
-        </label>
-        <button id="resetBtn" type="button" data-i18n="viewer.reset">Đặt lại góc nhìn</button>
-      </div>
-    </footer>
   </div>
+
   <script type="importmap">
 {
   "imports": {
@@ -156,7 +211,7 @@
     "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/"
   }
 }
-</script>
-<script type="module" src="./bootstrap.mjs"></script>
+  </script>
+  <script type="module" src="./bootstrap.mjs"></script>
 </body>
 </html>
