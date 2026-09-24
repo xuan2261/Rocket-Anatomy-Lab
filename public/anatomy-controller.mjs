@@ -415,11 +415,18 @@ export function createAnatomyController({
     if (item?.focusAssemblyId) onFocusReference(item)
   }
 
+  const resetRealDetailControls = () => {
+    detailExplodeByNode.clear()
+    detailPartVisibilityByNode.clear()
+    renderAnatomy()
+  }
+
   return {
     getMode: () => mode,
     getCurrentId: () => currentId,
     setDisabled,
     updateReferenceMarker,
+    resetRealDetailControls,
     destroy: () => {
       unsubscribeLanguage()
       window.removeEventListener('popstate', handlePopState)
