@@ -39,6 +39,10 @@ The Three.js raycaster continues to select real meshes recursively; reference an
 - https://www.nasa.gov/image-article/manufacturing-saturn-v-instrument-unit/
 - https://www.nasa.gov/history/diagrams/apollo.html
 
+## Visual baseline reconciliation
+
+The new **3D Model / NASA Anatomy** switch intentionally changes the default Objects-panel chrome. The resulting VI/EN × Light/Dark × Desktop/Mobile screenshots were reviewed in the Playwright report. A one-time CI workflow regenerated the eight golden snapshots on Ubuntu 24.04 + Chromium, verified that exactly those eight files changed, committed them, and removed itself.
+
 ## Verification gates
 
 TypeScript manifest validation, unit and contract tests, Playwright drill-down behavior, Axe WCAG A/AA in NASA Anatomy mode, and existing visual regression.
