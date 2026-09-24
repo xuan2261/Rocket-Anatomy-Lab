@@ -253,6 +253,7 @@ export function createAnatomyController({
       realDetailExplodeSlider.disabled = !detailAvailable || !multiPartDetail || !detailLoaded
       realDetailExplodeSlider.value = String(Math.round((detailExplodeByNode.get(item.id) ?? 0) * 100))
     }
+    const selectedPartId = selectedDetailPartByNode.get(item.id) ?? null
     if (realDetailPartsList) {
       realDetailPartsList.replaceChildren()
       if (multiPartDetail) {
@@ -261,27 +262,123 @@ export function createAnatomyController({
           visibility = new Map(realDetail.sourceParts.map(part => [part.id, true]))
           detailPartVisibilityByNode.set(item.id, visibility)
         }
+
         for (const part of realDetail.sourceParts) {
           const visible = visibility.get(part.id) !== false
-          const button = document.createElement('button')
-          button.type = 'button'
-          button.className = 'real-detail-part-button'
-          button.dataset.realDetailPartId = part.id
-          button.setAttribute('aria-pressed', String(visible))
-          button.setAttribute('aria-label', t(visible ? 'anatomy.realDetailPartVisible' : 'anatomy.realDetailPartHidden', { name: part.fileName }))
-          button.textContent = part.fileName
-          button.disabled = !detailLoaded
-          button.addEventListener('click', async () => {
-            const nextVisible = button.getAttribute('aria-pressed') !== 'true'
+          const row = document.createElement('div')
+          row.className = 'real-detail-part-row'
+          row.dataset.realDetailPartRow = part.id
+
+          const selectButton = document.createElement('button')
+          selectButton.type = 'button'
+          selectButton.className = 'real-detail-part-select'
+          selectButton.dataset.realDetailPartId = part.id
+          selectButton.textContent = part.fileName
+          selectButton.disabled = !detailLoaded || !visible
+          selectButton.setAttribute('aria-current', String(selectedPartId === part.id))
+          selectButton.dataset.hovered = String(hoveredDetailPartByNode.get(item.id) === part.id)
+          selectButton.addEventListener('pointerenter', () => {
+            if (!detailLoaded || !visible) return
+            hoveredDetailPartByNode.set(item.id, part.id)
+            selectButton.dataset.hovered = 'true'
+            onHoverRealDetailPart(item, part.id)
+          })
+          selectButton.addEventListener('pointerleave', () => {
+            hoveredDetailPartByNode.delete(item.id)
+            selectButton.dataset.hovered = 'false'
+            onHoverRealDetailPart(item, null)
+          })
+          selectButton.addEventListener('focus', () => {
+            if (!detailLoaded || !visible) return
+            hoveredDetailPartByNode.set(item.id, part.id)
+            selectButton.dataset.hovered = 'true'
+            onHoverRealDetailPart(item, part.id)
+          })
+          selectButton.addEventListener('blur', () => {
+            hoveredDetailPartByNode.delete(item.id)
+            selectButton.dataset.hovered = 'false'
+            onHoverRealDetailPart(item, null)
+          })
+          selectButton.addEventListener('click', () => {
+            if (!detailLoaded || !visible) return
+            selectedDetailPartByNode.set(item.id, part.id)
+            onSelectRealDetailPart(item, part.id)
+            renderAnatomy()
+            syncUrl({ push: true })
+          })
+
+          const visibilityButton = document.createElement('button')
+          visibilityButton.type = 'button'
+          visibilityButton.className = 'real-detail-part-visibility'
+          visibilityButton.dataset.realDetailPartVisibilityId = part.id
+          visibilityButton.setAttribute('aria-pressed', String(visible))
+          visibilityButton.setAttribute('aria-label', t(visible ? 'anatomy.realDetailPartVisible' : 'anatomy.realDetailPartHidden', { name: part.fileName }))
+          visibilityButton.textContent = t(visible ? 'anatomy.realDetailHide' : 'anatomy.realDetailShowPart')
+          visibilityButton.disabled = !detailLoaded
+          visibilityButton.addEventListener('click', async () => {
+            const nextVisible = visibilityButton.getAttribute('aria-pressed') !== 'true'
             const applied = await onSetRealDetailPartVisible(item, part.id, nextVisible)
             if (applied === false) return
             visibility.set(part.id, nextVisible)
+            if (!nextVisible && selectedDetailPartByNode.get(item.id) === part.id) {
+              selectedDetailPartByNode.delete(item.id)
+              ghostOtherPartsByNode.delete(item.id)
+              onlyPartByNode.delete(item.id)
+              onSelectRealDetailPart(item, null)
+            }
             renderAnatomy()
+            syncUrl({ push: true })
           })
-          realDetailPartsList.append(button)
+
+          row.append(selectButton, visibilityButton)
+          realDetailPartsList.append(row)
         }
       }
     }
+
+    const selectedPart = multiPartDetail && selectedPartId
+      ? realDetail.sourceParts.find(part => part.id === selectedPartId) ?? null
+      : null
+    const selectedStats = selectedPart && detailLoaded ? getRealDetailPartStats(item, selectedPart.id) : null
+    if (partInspector) partInspector.hidden = !selectedPart || !detailLoaded
+    if (partInspectorTitle) partInspectorTitle.textContent = selectedPart?.fileName ?? '—'
+    if (partBreadcrumbs) {
+      partBreadcrumbs.replaceChildren()
+      if (selectedPart) {
+        for (const value of [localized(realDetail.label), selectedPart.fileName]) {
+          const crumb = document.createElement('span')
+          crumb.className = 'anatomy-crumb'
+          crumb.textContent = value
+          if (value === selectedPart.fileName) crumb.setAttribute('aria-current', 'page')
+          partBreadcrumbs.append(crumb)
+        }
+      }
+    }
+    if (partFocusBtn) partFocusBtn.disabled = !selectedPart || !detailLoaded
+    if (partGhostBtn) {
+      partGhostBtn.disabled = !selectedPart || !detailLoaded
+      partGhostBtn.setAttribute('aria-pressed', String(Boolean(selectedPart && ghostOtherPartsByNode.get(item.id))))
+    }
+    if (partOnlyBtn) {
+      partOnlyBtn.disabled = !selectedPart || !detailLoaded
+      partOnlyBtn.setAttribute('aria-pressed', String(Boolean(selectedPart && onlyPartByNode.get(item.id))))
+    }
+    if (partMeshCount) partMeshCount.textContent = selectedStats ? String(selectedStats.meshCount) : '—'
+    if (partTriangleCount) partTriangleCount.textContent = selectedStats ? selectedStats.triangles.toLocaleString(getLanguage()) : '—'
+    if (partDrawCalls) partDrawCalls.textContent = selectedStats ? String(selectedStats.estimatedDrawCalls) : '—'
+    if (partBounds) {
+      partBounds.textContent = selectedStats
+        ? [selectedStats.bounds.x, selectedStats.bounds.y, selectedStats.bounds.z].map(value => value.toFixed(2)).join(' × ')
+        : '—'
+    }
+    if (partProvenance) {
+      partProvenance.textContent = selectedPart
+        ? t('anatomy.partProvenance', { file: selectedPart.fileName, sha: selectedPart.gitBlobSha.slice(0, 12) })
+        : ''
+      if (selectedPart) partProvenance.title = selectedPart.gitBlobSha
+      else partProvenance.removeAttribute('title')
+    }
+
     if (realDetailStatus) {
       const suffix = realDetail?.partCount > 1 ? ` · ${t('anatomy.realDetailParts', { count: realDetail.partCount })}` : ''
       if (!detailAvailable) realDetailStatus.textContent = ''
