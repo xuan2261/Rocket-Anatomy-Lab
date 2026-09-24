@@ -305,7 +305,7 @@ test.describe('Rocket Anatomy Lab — luồng chính', () => {
 
     await page.locator('#inspectInsideBtn').click()
     await expect(toggle).toHaveAttribute('aria-pressed', 'true')
-    await expect(status).toContainText('18%')
+    await expect(status).toContainText('60%')
 
     await page.locator('#resetBtn').click()
     await expect(toggle).toHaveAttribute('aria-pressed', 'false')
