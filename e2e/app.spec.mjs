@@ -79,6 +79,36 @@ test.describe('Rocket Anatomy Lab — luồng chính', () => {
     await expect(page.locator('#timelineStatus')).toContainText('Trạng thái lắp ghép ban đầu')
   })
 
+  test('drill-down Giải phẫu NASA giữ tách biệt dữ liệu tham chiếu và geometry thật', async ({ page }) => {
+    await page.goto('/')
+    await waitForRealAsset(page)
+    await openControlPanel(page, 'objects')
+
+    await expect(page.locator('[data-structure-mode="model"]')).toHaveAttribute('aria-pressed', 'true')
+    await page.locator('[data-structure-mode="anatomy"]').click()
+    await expect(page.locator('#anatomyPanel')).toBeVisible()
+    await expect(page.locator('#modelStructurePanel')).toBeHidden()
+    await expect(page.locator('#anatomyTitle')).toHaveText('Saturn V / Apollo')
+    await expect(page.locator('#anatomyList .anatomy-node')).toHaveCount(5)
+
+    await page.locator('[data-anatomy-id="sic-stage"]').click()
+    await expect(page.locator('#anatomyTitle')).toContainText('S-IC')
+    await expect(page.locator('#anatomyList .anatomy-node')).toHaveCount(6)
+
+    await page.locator('[data-anatomy-id="sic-lox-tank"]').click()
+    await expect(page.locator('#anatomyTitle')).toHaveText('Bồn LOX')
+    await expect(page.locator('#anatomyBinding')).toContainText('gần đúng')
+    await expect(page.locator('#anatomySourceLink')).toHaveAttribute('href', /nasa\.gov|ntrs\.nasa\.gov/)
+
+    await page.locator('#anatomyInspectBtn').click()
+    await expect(page.locator('#modeValue')).toContainText('X-quang')
+
+    await openControlPanel(page, 'section')
+    await expect(page.locator('#sectionToggleBtn')).toContainText('Mặt cắt: Bật')
+    await expect(page.locator('#sectionStatus')).toContainText('Y')
+    await expect(page.locator('#sectionStatus')).toContainText('32%')
+  })
+
   test('preset khám phá bên trong kết hợp X-quang, mặt cắt và vùng đang chọn', async ({ page }) => {
     await page.goto('/')
     await waitForRealAsset(page)
