@@ -109,6 +109,56 @@ test.describe('Rocket Anatomy Lab — luồng chính', () => {
     await expect(page.locator('#sectionStatus')).toContainText('32%')
   })
 
+  test('Phase 13 deep-link, search, history, evidence và viewport marker hoạt động cùng nhau', async ({ page }) => {
+    await page.goto('/?structure=anatomy&anatomy=sic-lox-tank&lang=vi')
+    await waitForRealAsset(page)
+    await openControlPanel(page, 'objects')
+
+    await expect(page.locator('[data-structure-mode="anatomy"]')).toHaveAttribute('aria-pressed', 'true')
+    await expect(page.locator('#anatomyTitle')).toHaveText('Bồn LOX')
+    await expect(page).toHaveURL(/structure=anatomy/)
+    await expect(page).toHaveURL(/anatomy=sic-lox-tank/)
+
+    const marker = page.locator('[data-anatomy-reference-id="sic-lox-tank"]')
+    await expect(marker).toBeVisible()
+    await expect(marker).toContainText('Bồn LOX')
+
+    const evidence = page.locator('#anatomyEvidenceDetails')
+    await evidence.locator('summary').click()
+    await expect(page.locator('#anatomyEvidenceSource')).toContainText('NASA')
+    await expect(page.locator('#anatomyEvidenceMapping')).toContainText('gần đúng')
+    await expect(page.locator('#anatomySourceLink')).toHaveAttribute('href', /nasa\.gov|ntrs\.nasa\.gov/)
+
+    const search = page.locator('#anatomySearchInput')
+    await search.fill('command module')
+    await expect(page.locator('#anatomySearchStatus')).toContainText('1 kết quả')
+    await search.press('ArrowDown')
+    const result = page.locator('[data-anatomy-id="apollo-command-module"]')
+    await expect(result).toBeFocused()
+    await result.press('Enter')
+
+    await expect(page.locator('#anatomyTitle')).toHaveText('Command Module')
+    await expect(page).toHaveURL(/anatomy=apollo-command-module/)
+
+    await page.goBack()
+    await expect(page.locator('#anatomyTitle')).toHaveText('Bồn LOX')
+    await expect(page).toHaveURL(/anatomy=sic-lox-tank/)
+
+    await page.goForward()
+    await expect(page.locator('#anatomyTitle')).toHaveText('Command Module')
+    await expect(page).toHaveURL(/anatomy=apollo-command-module/)
+
+    await page.reload()
+    await waitForRealAsset(page)
+    await expect(page.locator('#anatomyTitle')).toHaveText('Command Module')
+    await expect(page.locator('[data-structure-mode="anatomy"]')).toHaveAttribute('aria-pressed', 'true')
+
+    await page.locator('#anatomySearchInput').fill('does-not-exist')
+    await expect(page.locator('#anatomySearchStatus')).toContainText('Không tìm thấy')
+    await page.locator('#anatomySearchInput').press('Escape')
+    await expect(page.locator('#anatomySearchInput')).toHaveValue('')
+  })
+
   test('preset khám phá bên trong kết hợp X-quang, mặt cắt và vùng đang chọn', async ({ page }) => {
     await page.goto('/')
     await waitForRealAsset(page)
