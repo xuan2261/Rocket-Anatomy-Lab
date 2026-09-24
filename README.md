@@ -26,6 +26,7 @@
 - **Anatomy Navigation Phase 13**: deep-link từng anatomy node, search VI/EN, Back/Forward, evidence drawer, viewport reference marker và camera bookmark gần đúng.
 - **Procedural Detail Phase 14**: lớp 3D sơ đồ bổ sung bằng Three.js `InstancedMesh` + `EdgesGeometry`, clipping theo mặt cắt và bóc tách độc lập; luôn gắn nhãn minh họa, không phải geometry kỹ thuật/chế tạo.
 - **Qualified Detail Phase 15**: Lunar Module GLB thật từ NASA được pin byte length + Git blob SHA, fetch fail-closed trong CI, lazy-load theo node `apollo-lm-sla`, ghost shell và clipping đồng bộ.
+- **Multi-part Detail Phase 16**: Stage 1/2 STL chính thức của NASA được pin byte length + Git blob SHA, convert offline thành GLB nhiều node, giữ từng source part độc lập để ẩn/hiện và bóc tách trực quan.
 - Fallback fail-closed: tính năng yêu cầu GLB thật sẽ bị vô hiệu thay vì mô phỏng sai.
 - Giao diện **song ngữ Việt/Anh (VI/EN)**, mặc định tiếng Việt, ghi nhớ lựa chọn bằng `localStorage` và cập nhật `html[lang]` cho công nghệ hỗ trợ.
 - Theme **Light/Dark kiểu aerospace workstation**: neutral-first, một brand-blue chính, surface hierarchy rõ, tab segmented, layered shadow và primary action nổi bật; mobile rút gọn brand để ưu tiên viewport.
@@ -57,7 +58,8 @@ Three.js renderer
   ├─ Guided Learning / Annotations
   ├─ NASA reference anatomy drill-down
   ├─ Procedural schematic detail fallback
-  └─ Qualified NASA detail packages
+  ├─ Qualified NASA GLB detail packages
+  └─ Multi-part NASA STL→GLB stage packages
       │
       ▼
 UI VI/EN + accessibility
@@ -106,6 +108,7 @@ npm install
 npm run build
 npm run fetch:source
 npm run fetch:detail-assets
+npm run build:stage-detail-assets
 npm run qualify:real
 npm run serve
 ```
@@ -124,10 +127,10 @@ http://127.0.0.1:4174
 npm test
 ```
 
-### Toàn bộ gate Phase 1 → Phase 15
+### Toàn bộ gate Phase 1 → Phase 16
 
 ```bash
-npm run verify:phase15
+npm run verify:phase16
 ```
 
 ### Accessibility automation
@@ -206,6 +209,7 @@ Mô hình nguồn NASA được pin bằng provenance/fingerprint. Pipeline ki�
 - metadata provenance;
 - fail-closed nếu source drift.
 - Lunar Module detail package: byte length + Git blob SHA + GLB v2 header/declared length trước khi Pages đóng gói asset.
+- Stage 1/2 source-part packages: từng STL phải khớp byte length + Git blob SHA; GLB sinh ra phải giữ đủ node/mesh/sourcePart và accessor không rỗng.
 
 ## 🌐 Ngôn ngữ
 
@@ -252,6 +256,7 @@ Mô hình nguồn NASA được pin bằng provenance/fingerprint. Pipeline ki�
 - [`docs/PHASE13_ANATOMY_NAVIGATION.md`](docs/PHASE13_ANATOMY_NAVIGATION.md)
 - [`docs/PHASE14_PROCEDURAL_DETAIL.md`](docs/PHASE14_PROCEDURAL_DETAIL.md)
 - [`docs/PHASE15_QUALIFIED_DETAIL_ASSETS.md`](docs/PHASE15_QUALIFIED_DETAIL_ASSETS.md)
+- [`docs/PHASE16_STAGE_DETAIL_PACKAGES.md`](docs/PHASE16_STAGE_DETAIL_PACKAGES.md)
 
 ## 🛰️ Nguồn mô hình NASA
 
