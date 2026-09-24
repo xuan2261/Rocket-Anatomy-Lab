@@ -48,6 +48,7 @@
       <section class="viewer-panel" data-i18n-aria-label="viewer.panelAria" aria-label="Trình xem 3D">
         <canvas id="viewport" tabindex="0" data-i18n-aria-label="viewer.canvasAria" aria-label="Mô hình phương tiện phóng vũ trụ 3D giáo dục. Kéo để xoay; lăn chuột để thu phóng; bấm vào một phần để chọn."></canvas>
         <div id="annotationLayer" class="annotation-layer" data-i18n-aria-label="learning.annotationLayerAria" aria-label="Các điểm chú thích giáo dục"></div>
+        <div id="anatomyReferenceLayer" class="annotation-layer anatomy-reference-layer" data-i18n-aria-label="anatomy.referenceLayerAria" aria-label="Điểm tham chiếu giải phẫu NASA" hidden></div>
         <div class="viewer-hint" data-i18n="viewer.hint">Kéo để xoay · Lăn chuột để thu phóng · Bấm vào một phần để chọn</div>
         <div class="mode-chip" id="modeChip" data-i18n="viewer.mode.normal">Bình thường</div>
       </section>
@@ -115,6 +116,11 @@
               <span id="anatomyBinding" class="anatomy-binding-badge">Tham chiếu NASA</span>
             </div>
             <nav id="anatomyBreadcrumbs" class="anatomy-breadcrumbs" data-i18n-aria-label="anatomy.breadcrumbAria" aria-label="Đường dẫn giải phẫu"></nav>
+            <label class="anatomy-search" for="anatomySearchInput">
+              <span data-i18n="anatomy.searchLabel">Tìm trong giải phẫu</span>
+              <input id="anatomySearchInput" type="search" autocomplete="off" spellcheck="false" data-i18n-placeholder="anatomy.searchPlaceholder" placeholder="LOX, J-2, Command Module…" />
+            </label>
+            <p id="anatomySearchStatus" class="anatomy-search-status" aria-live="polite"></p>
             <div class="anatomy-reference-card">
               <div class="anatomy-title-row">
                 <span class="panel-kicker" data-i18n="anatomy.kicker">GIẢI PHẪU THAM CHIẾU</span>
@@ -124,6 +130,18 @@
               <p id="anatomyDescription">Cây giải phẫu tham chiếu theo tài liệu NASA.</p>
               <p class="capability-note" data-i18n="anatomy.bindingNote">Các vị trí 3D là neo trực quan gần đúng; không phải ranh giới kỹ thuật được suy ra từ GLB.</p>
               <a id="anatomySourceLink" class="anatomy-source-link" href="https://science.nasa.gov/3d-resources/saturn-v/" target="_blank" rel="noreferrer">Nguồn NASA ↗</a>
+              <details id="anatomyEvidenceDetails" class="source-details anatomy-evidence-details">
+                <summary data-i18n="anatomy.evidenceSummary">Nguồn & mức bằng chứng</summary>
+                <dl class="anatomy-evidence-grid">
+                  <div><dt data-i18n="anatomy.evidenceSourceLabel">Nguồn</dt><dd id="anatomyEvidenceSource">NASA chính thức</dd></div>
+                  <div><dt data-i18n="anatomy.evidenceMappingLabel">Ánh xạ 3D</dt><dd id="anatomyEvidenceMapping">Tham chiếu</dd></div>
+                </dl>
+                <p class="source-note" data-i18n="anatomy.evidenceNote">Tên và mô tả đến từ nguồn NASA; vị trí marker/camera/mặt cắt là neo giáo dục trên GLB hiện tại.</p>
+              </details>
+              <div class="anatomy-share-row">
+                <button id="anatomyCopyLinkBtn" type="button" class="text-button" data-i18n="anatomy.copyLink">Sao chép liên kết mục này</button>
+                <span id="anatomyShareStatus" class="share-status" aria-live="polite"></span>
+              </div>
             </div>
             <div id="anatomyList" class="anatomy-list" data-i18n-aria-label="anatomy.childrenAria" aria-label="Các mục giải phẫu con"></div>
             <div class="anatomy-actions">
