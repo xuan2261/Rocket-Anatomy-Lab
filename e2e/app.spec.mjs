@@ -159,6 +159,25 @@ test.describe('Rocket Anatomy Lab — luồng chính', () => {
     await expect(page.locator('#anatomySearchInput')).toHaveValue('')
   })
 
+  test('Phase 15 lazy-load mô hình Lunar Module thật đã xác minh', async ({ page }) => {
+    await page.goto('/?structure=anatomy&anatomy=apollo-lm-sla&lang=vi')
+    await waitForRealAsset(page)
+    await openControlPanel(page, 'objects')
+
+    await expect(page.locator('#anatomyTitle')).toContainText('Lunar Module')
+    await expect(page.locator('#anatomyRealDetailCard')).toBeVisible()
+    await expect(page.locator('#anatomyRealDetailTitle')).toContainText('Apollo Lunar Module')
+    await expect(page.locator('#anatomyRealDetailStatus')).toContainText('Sẵn sàng')
+    await expect(page.locator('#anatomyLoadRealDetailBtn')).toHaveText('Tải chi tiết NASA')
+
+    await page.locator('#anatomyLoadRealDetailBtn').click()
+
+    await expect(page.locator('#anatomyRealDetailStatus')).toContainText('Đã tải mô hình NASA thật', { timeout: 30_000 })
+    await expect(page.locator('#anatomyLoadRealDetailBtn')).toHaveText('Hiện chi tiết NASA')
+    await expect(page.locator('#modeValue')).toContainText('Bóng mờ')
+    await expect(page.locator('#schematicDetailBtn')).toHaveAttribute('aria-pressed', 'false')
+  })
+
   test('lớp chi tiết 3D sơ đồ bật/tắt, bóc tách và reset độc lập', async ({ page }) => {
     await page.goto('/')
     await waitForRealAsset(page)
