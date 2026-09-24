@@ -462,7 +462,12 @@ export function createAnatomyController({
           if (!detailExplodeByNode.has(item.id)) detailExplodeByNode.set(item.id, 0)
         }
       }
-    } catch {
+    } catch (error) {
+      console.error('[Rocket Anatomy Lab] Qualified detail load failed', {
+        nodeId: item.id,
+        assetId: detail.id,
+        error,
+      })
       failedDetailNodes.add(item.id)
     } finally {
       detailLoadingNodeId = null
