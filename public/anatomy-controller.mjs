@@ -20,6 +20,8 @@ export function createAnatomyController({
   onFocusReference = () => {},
   onInspectReference = () => {},
   onLoadRealDetail = async () => false,
+  onSetRealDetailExplode = async () => false,
+  onSetRealDetailPartVisible = async () => false,
   getReferenceAnchor = () => null,
 } = {}) {
   const errors = validateAnatomyManifest(saturnVAnatomyManifest)
@@ -54,6 +56,9 @@ export function createAnatomyController({
   const realDetailTitle = document.querySelector('#anatomyRealDetailTitle')
   const realDetailBtn = document.querySelector('#anatomyLoadRealDetailBtn')
   const realDetailStatus = document.querySelector('#anatomyRealDetailStatus')
+  const realDetailPartsWrap = document.querySelector('#anatomyRealDetailPartsWrap')
+  const realDetailPartsList = document.querySelector('#anatomyRealDetailPartsList')
+  const realDetailExplodeSlider = document.querySelector('#anatomyRealDetailExplodeSlider')
 
   let mode = structureModeFromSearch(location.search, nodeIds)
   let currentId = deepLinkedId ?? saturnVAnatomyManifest.rootId
@@ -63,6 +68,8 @@ export function createAnatomyController({
   let detailLoadingNodeId = null
   const loadedDetailNodes = new Set()
   const failedDetailNodes = new Set()
+  const detailExplodeByNode = new Map()
+  const detailPartVisibilityByNode = new Map()
 
   const current = () => anatomyNodeById(saturnVAnatomyManifest, currentId)
   const localized = value => anatomyText(value, getLanguage())
@@ -195,12 +202,49 @@ export function createAnatomyController({
       realDetailBtn.disabled = !detailAvailable || loading
       realDetailBtn.textContent = t(loadedDetailNodes.has(item.id) ? 'anatomy.realDetailShow' : 'anatomy.realDetailLoad')
     }
+    const multiPartDetail = realDetail?.sourceKind === 'generated-stl-package'
+    const detailLoaded = loadedDetailNodes.has(item.id)
+    if (realDetailPartsWrap) realDetailPartsWrap.hidden = !detailAvailable || !multiPartDetail
+    if (realDetailExplodeSlider) {
+      realDetailExplodeSlider.disabled = !detailAvailable || !multiPartDetail || !detailLoaded
+      realDetailExplodeSlider.value = String(Math.round((detailExplodeByNode.get(item.id) ?? 0) * 100))
+    }
+    if (realDetailPartsList) {
+      realDetailPartsList.replaceChildren()
+      if (multiPartDetail) {
+        let visibility = detailPartVisibilityByNode.get(item.id)
+        if (!visibility) {
+          visibility = new Map(realDetail.sourceParts.map(part => [part.id, true]))
+          detailPartVisibilityByNode.set(item.id, visibility)
+        }
+        for (const part of realDetail.sourceParts) {
+          const visible = visibility.get(part.id) !== false
+          const button = document.createElement('button')
+          button.type = 'button'
+          button.className = 'real-detail-part-button'
+          button.dataset.realDetailPartId = part.id
+          button.setAttribute('aria-pressed', String(visible))
+          button.setAttribute('aria-label', t(visible ? 'anatomy.realDetailPartVisible' : 'anatomy.realDetailPartHidden', { name: part.fileName }))
+          button.textContent = part.fileName
+          button.disabled = !detailLoaded
+          button.addEventListener('click', async () => {
+            const nextVisible = button.getAttribute('aria-pressed') !== 'true'
+            const applied = await onSetRealDetailPartVisible(item, part.id, nextVisible)
+            if (applied === false) return
+            visibility.set(part.id, nextVisible)
+            renderAnatomy()
+          })
+          realDetailPartsList.append(button)
+        }
+      }
+    }
     if (realDetailStatus) {
+      const suffix = realDetail?.partCount > 1 ? ` · ${t('anatomy.realDetailParts', { count: realDetail.partCount })}` : ''
       if (!detailAvailable) realDetailStatus.textContent = ''
-      else if (detailLoadingNodeId === item.id) realDetailStatus.textContent = t('anatomy.realDetailLoading')
+      else if (detailLoadingNodeId === item.id) realDetailStatus.textContent = t('anatomy.realDetailLoading') + suffix
       else if (failedDetailNodes.has(item.id)) realDetailStatus.textContent = t('anatomy.realDetailFailed')
-      else if (loadedDetailNodes.has(item.id)) realDetailStatus.textContent = t('anatomy.realDetailLoaded')
-      else realDetailStatus.textContent = t('anatomy.realDetailReady')
+      else if (detailLoaded) realDetailStatus.textContent = t('anatomy.realDetailLoaded') + suffix
+      else realDetailStatus.textContent = t('anatomy.realDetailReady') + suffix
     }
 
     renderBreadcrumb(item)
@@ -266,6 +310,12 @@ export function createAnatomyController({
       } else {
         loadedDetailNodes.add(item.id)
         failedDetailNodes.delete(item.id)
+        if (detail.sourceKind === 'generated-stl-package') {
+          if (!detailPartVisibilityByNode.has(item.id)) {
+            detailPartVisibilityByNode.set(item.id, new Map(detail.sourceParts.map(part => [part.id, true])))
+          }
+          if (!detailExplodeByNode.has(item.id)) detailExplodeByNode.set(item.id, 0)
+        }
       }
     } catch {
       failedDetailNodes.add(item.id)
@@ -273,6 +323,17 @@ export function createAnatomyController({
       detailLoadingNodeId = null
       renderAnatomy()
     }
+  })
+
+  realDetailExplodeSlider?.addEventListener('input', async () => {
+    const item = current()
+    const detail = item ? detailAssetForNode(item.id) : null
+    if (!item || detail?.sourceKind !== 'generated-stl-package' || !loadedDetailNodes.has(item.id)) return
+    const amount = Number(realDetailExplodeSlider.value) / 100
+    const applied = await onSetRealDetailExplode(item, amount)
+    if (applied === false) return
+    detailExplodeByNode.set(item.id, amount)
+    renderAnatomy()
   })
 
   searchInput?.addEventListener('input', () => {
@@ -366,6 +427,8 @@ export function createAnatomyController({
       detailLoadingNodeId = null
       loadedDetailNodes.clear()
       failedDetailNodes.clear()
+      detailExplodeByNode.clear()
+      detailPartVisibilityByNode.clear()
       referenceLayer?.replaceChildren()
     },
   }
