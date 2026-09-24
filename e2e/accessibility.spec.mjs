@@ -49,6 +49,17 @@ for (const language of ['vi', 'en']) {
           `${language}/anatomy-real-detail: ${realDetailCardResults.violations.map(v => v.id).join(', ')}`,
         ).toEqual([])
 
+        await page.locator('#anatomyBreadcrumbs').getByRole('button', { name: /Saturn V/ }).click()
+        await page.locator('[data-anatomy-id="sic-stage"]').click()
+        await expect(page.locator('#anatomyRealDetailPartsWrap')).toBeVisible()
+        const multiPartResults = await new AxeBuilder({ page })
+          .withTags(WCAG_AA_TAGS)
+          .analyze()
+        expect(
+          multiPartResults.violations,
+          `${language}/anatomy-multipart-detail: ${multiPartResults.violations.map(v => v.id).join(', ')}`,
+        ).toEqual([])
+
         await page.locator('[data-structure-mode="model"]').click()
       }
     }
