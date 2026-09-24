@@ -22,6 +22,7 @@
 - **Guided Learning Phase 6**: 5 bài học semantic VI/EN, annotation 3D, Previous/Next, focus camera, preset Section/Cutaway và deep-link chia sẻ trạng thái bài học.
 - Fallback fail-closed: tính năng yêu cầu GLB thật sẽ bị vô hiệu thay vì mô phỏng sai.
 - Giao diện **song ngữ Việt/Anh (VI/EN)**, mặc định tiếng Việt, ghi nhớ lựa chọn bằng `localStorage` và cập nhật `html[lang]` cho công nghệ hỗ trợ.
+- Theme **Light/Dark kiểu aerospace workstation**: neutral-first, một brand-blue chính, surface hierarchy rõ, tab segmented, layered shadow và primary action nổi bật; mobile rút gọn brand để ưu tiên viewport.
 - Responsive cho desktop/mobile/landscape; điều khiển chính tối thiểu 44 px và tăng lên 48 px trên thiết bị coarse-pointer.
 - Test nhiều lớp: unit, integration/contract, E2E Playwright, **axe WCAG A/AA**, **task-based usability guardrails** và visual regression VI/EN × Light/Dark trên desktop/mobile.
 - CI GitHub Actions và CD lên GitHub Pages.
