@@ -21,6 +21,8 @@ test('Phase 17 inspector keeps picking and part controls inside the qualified vi
   assert.match(controller,/selectRealDetailPart/)
   assert.match(realApp,/realDetailLoader\?\.pickPart/)
   assert.match(realApp,/canvas\.addEventListener\('pointermove'/)
+  assert.match(html,/id="anatomyList"[^>]*role="group"/)
+  assert.match(html,/id="anatomyRealDetailPartsList"[^>]*role="group"/)
   assert.match(html,/id="anatomyPartInspector"/)
   assert.match(html,/id="anatomyPartFocusBtn"/)
   assert.match(docs,/does not alter source geometry/i)
