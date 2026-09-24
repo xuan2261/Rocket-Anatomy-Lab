@@ -25,6 +25,7 @@
 - **Deep Anatomy Phase 12**: chuyển giữa cây geometry thật và cây giải phẫu NASA nhiều cấp (S-IC, S-II, S-IVB, Instrument Unit, Apollo), có breadcrumb, nguồn NASA, focus vùng gần đúng và preset X-ray + section cut.
 - **Anatomy Navigation Phase 13**: deep-link từng anatomy node, search VI/EN, Back/Forward, evidence drawer, viewport reference marker và camera bookmark gần đúng.
 - **Procedural Detail Phase 14**: lớp 3D sơ đồ bổ sung bằng Three.js `InstancedMesh` + `EdgesGeometry`, clipping theo mặt cắt và bóc tách độc lập; luôn gắn nhãn minh họa, không phải geometry kỹ thuật/chế tạo.
+- **Qualified Detail Phase 15**: Lunar Module GLB thật từ NASA được pin byte length + Git blob SHA, fetch fail-closed trong CI, lazy-load theo node `apollo-lm-sla`, ghost shell và clipping đồng bộ.
 - Fallback fail-closed: tính năng yêu cầu GLB thật sẽ bị vô hiệu thay vì mô phỏng sai.
 - Giao diện **song ngữ Việt/Anh (VI/EN)**, mặc định tiếng Việt, ghi nhớ lựa chọn bằng `localStorage` và cập nhật `html[lang]` cho công nghệ hỗ trợ.
 - Theme **Light/Dark kiểu aerospace workstation**: neutral-first, một brand-blue chính, surface hierarchy rõ, tab segmented, layered shadow và primary action nổi bật; mobile rút gọn brand để ưu tiên viewport.
@@ -54,7 +55,9 @@ Three.js renderer
   ├─ Guided timeline
   ├─ Section / Cutaway
   ├─ Guided Learning / Annotations
-  └─ NASA reference anatomy drill-down
+  ├─ NASA reference anatomy drill-down
+  ├─ Procedural schematic detail fallback
+  └─ Qualified NASA detail packages
       │
       ▼
 UI VI/EN + accessibility
@@ -78,7 +81,9 @@ Logic domain nằm trong `src/`; mã TypeScript được build sang `public/core
 │  ├─ timeline-controller.mjs
 │  ├─ section-controller.mjs
 │  ├─ learning-controller.mjs
-│  └─ anatomy-controller.mjs
+│  ├─ anatomy-controller.mjs
+│  ├─ procedural-detail-layer.mjs
+│  └─ real-detail-loader.mjs
 ├─ scripts/                 # qualification/re-authoring/local server
 ├─ src/                     # domain logic TypeScript
 ├─ tests/                   # unit + contract/integration
@@ -98,9 +103,10 @@ Logic domain nằm trong `src/`; mã TypeScript được build sang `public/core
 
 ```bash
 npm install
-npm run fetch:source
-npm run qualify:real
 npm run build
+npm run fetch:source
+npm run fetch:detail-assets
+npm run qualify:real
 npm run serve
 ```
 
@@ -118,10 +124,10 @@ http://127.0.0.1:4174
 npm test
 ```
 
-### Toàn bộ gate Phase 1 → Phase 14
+### Toàn bộ gate Phase 1 → Phase 15
 
 ```bash
-npm run verify:phase14
+npm run verify:phase15
 ```
 
 ### Accessibility automation
@@ -199,6 +205,7 @@ Mô hình nguồn NASA được pin bằng provenance/fingerprint. Pipeline ki�
 - triangle conservation;
 - metadata provenance;
 - fail-closed nếu source drift.
+- Lunar Module detail package: byte length + Git blob SHA + GLB v2 header/declared length trước khi Pages đóng gói asset.
 
 ## 🌐 Ngôn ngữ
 
@@ -244,6 +251,7 @@ Mô hình nguồn NASA được pin bằng provenance/fingerprint. Pipeline ki�
 - [`docs/PHASE12_DEEP_ANATOMY.md`](docs/PHASE12_DEEP_ANATOMY.md)
 - [`docs/PHASE13_ANATOMY_NAVIGATION.md`](docs/PHASE13_ANATOMY_NAVIGATION.md)
 - [`docs/PHASE14_PROCEDURAL_DETAIL.md`](docs/PHASE14_PROCEDURAL_DETAIL.md)
+- [`docs/PHASE15_QUALIFIED_DETAIL_ASSETS.md`](docs/PHASE15_QUALIFIED_DETAIL_ASSETS.md)
 
 ## 🛰️ Nguồn mô hình NASA
 
