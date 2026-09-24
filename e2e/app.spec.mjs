@@ -159,6 +159,40 @@ test.describe('Rocket Anatomy Lab — luồng chính', () => {
     await expect(page.locator('#anatomySearchInput')).toHaveValue('')
   })
 
+  test('lớp chi tiết 3D sơ đồ bật/tắt, bóc tách và reset độc lập', async ({ page }) => {
+    await page.goto('/')
+    await waitForRealAsset(page)
+    await openControlPanel(page, 'view')
+
+    const toggle = page.locator('#schematicDetailBtn')
+    const slider = page.locator('#schematicExplodeSlider')
+    const status = page.locator('#schematicDetailStatus')
+
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    await expect(slider).toBeDisabled()
+    await expect(status).toContainText('Đang tắt')
+
+    await toggle.click()
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    await expect(slider).toBeEnabled()
+    await expect(status).toContainText('32 đối tượng')
+
+    await slider.fill('60')
+    await expect(status).toContainText('60%')
+
+    await toggle.click()
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    await expect(slider).toBeDisabled()
+
+    await page.locator('#inspectInsideBtn').click()
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    await expect(status).toContainText('18%')
+
+    await page.locator('#resetBtn').click()
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    await expect(status).toContainText('Đang tắt')
+  })
+
   test('preset khám phá bên trong kết hợp X-quang, mặt cắt và vùng đang chọn', async ({ page }) => {
     await page.goto('/')
     await waitForRealAsset(page)
