@@ -576,6 +576,78 @@ h1 {
   content: '○';
   color: var(--muted);
 }
+.real-detail-part-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+}
+.real-detail-part-select,
+.real-detail-part-visibility {
+  min-height: 40px;
+  background: var(--control);
+  font-size: 12px;
+}
+.real-detail-part-select {
+  min-width: 0;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.real-detail-part-select[aria-current="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-weight: 750;
+}
+.real-detail-part-select[data-hovered="true"] {
+  border-color: var(--border-strong);
+}
+.real-detail-part-visibility {
+  min-width: 64px;
+  color: var(--muted);
+}
+.real-detail-inspector {
+  display: grid;
+  gap: 9px;
+  padding-top: 9px;
+  border-top: 1px solid var(--border);
+}
+.real-detail-inspector[hidden] { display: none; }
+.real-detail-inspector-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 9px;
+}
+.real-detail-inspector-heading > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+.real-detail-inspector-heading strong {
+  font-size: 13px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.real-detail-inspector-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.real-detail-inspector-actions button {
+  min-width: 0;
+  padding-inline: 8px;
+  font-size: 11px;
+  line-height: 1.2;
+}
+.real-detail-stats {
+  margin: 0;
+}
+.real-detail-stats dd {
+  font-variant-numeric: tabular-nums;
+}
+
 .anatomy-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
 .tree { display: grid; gap: 6px; }
@@ -843,7 +915,10 @@ dt { color: var(--muted); } dd { margin: 0; font-weight: 700; }
   .anatomy-reference-marker,
   .schematic-detail-heading button,
   .anatomy-real-detail-card .primary-action,
-  .real-detail-part-button {
+  .real-detail-part-button,
+  .real-detail-part-select,
+  .real-detail-part-visibility,
+  .real-detail-inspector-actions button {
     min-height: 48px;
   }
 
