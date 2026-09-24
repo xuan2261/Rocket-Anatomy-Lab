@@ -58,22 +58,22 @@ async function pickFocusedAssemblyFromViewport(page, assemblyId, otherAssemblyId
   const box = await canvas.boundingBox()
   expect(box).not.toBeNull()
 
-  const offsets = []
-  for (const dy of [0, -24, 24, -48, 48, -72, 72, -96, 96]) {
-    for (const dx of [0, -24, 24, -48, 48, -72, 72, -96, 96]) offsets.push([dx, dy])
-  }
+  const fractions = [0.5, 0.4, 0.6, 0.3, 0.7, 0.2, 0.8, 0.1, 0.9, 0.05, 0.95]
 
-  for (const [dx, dy] of offsets) {
-    const x = Math.min(box.x + box.width - 2, Math.max(box.x + 2, box.x + box.width / 2 + dx))
-    const y = Math.min(box.y + box.height - 2, Math.max(box.y + 2, box.y + box.height / 2 + dy))
-    await page.mouse.click(x, y)
-    if (await canvas.getAttribute('data-selected-assembly') === assemblyId) {
-      await page.locator('#showAllBtn').click()
-      return
+  for (const fy of fractions) {
+    for (const fx of fractions) {
+      const x = box.x + box.width * fx
+      const y = box.y + box.height * fy
+      await page.mouse.click(x, y)
+      if (await canvas.getAttribute('data-selected-assembly') === assemblyId) {
+        await page.locator('#showAllBtn').click()
+        return
+      }
     }
   }
 
   await expect(canvas).toHaveAttribute('data-selected-assembly', assemblyId)
+  await page.locator('#showAllBtn').click()
 }
 
 for (const language of ['vi', 'en']) {
