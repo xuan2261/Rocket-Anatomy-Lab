@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 
 const WCAG_AA_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
-const PANELS = ['objects', 'view', 'timeline', 'learning', 'section']
+const PANELS = ['objects', 'view', 'timeline', 'learning', 'section', 'help']
 
 async function waitForRealAsset(page) {
   await expect(page.locator('#assetStatus')).toHaveAttribute('data-state', 'assembly', { timeout: 30_000 })
