@@ -8,6 +8,18 @@ test('NASA geometric manifest validates', () => {
   assert.equal(nasaSaturnVGeometricManifest.groups.length, 5)
 })
 
+test('normal mode emphasizes the selected assembly without hiding context', () => {
+  const state = selectPart(initialState(), 'band-2')
+  const view = deriveSemanticView(nasaSaturnVGeometricManifest, state)
+  const selected = view.find(item => item.id === 'band-2')
+  const other = view.find(item => item.id === 'band-1')
+  assert.equal(selected.opacity, 1)
+  assert.equal(other.opacity, 0.52)
+
+  const cleared = deriveSemanticView(nasaSaturnVGeometricManifest, selectPart(state, null))
+  assert.equal(cleared.every(item => item.opacity === 1), true)
+})
+
 test('semantic selection remains opaque in xray while unselected groups ghost', () => {
   let state = selectPart(initialState(), 'band-2')
   state = setMode(state, 'xray')
