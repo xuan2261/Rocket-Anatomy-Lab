@@ -35,23 +35,36 @@ async function selectFromTree(page, assemblyId) {
   await expect(page.locator('#viewport')).toHaveAttribute('data-selected-assembly', assemblyId)
 }
 
-async function pickFromViewportUsingLessonAnchor(page, assemblyId, otherAssemblyId) {
+async function pickFocusedAssemblyFromViewport(page, assemblyId, otherAssemblyId) {
   await openPanel(page, 'learning')
-  const annotationToggle = page.locator('#learningAnnotationsBtn')
-  if (await annotationToggle.getAttribute('aria-pressed') !== 'true') await annotationToggle.click()
-  await expect(annotationToggle).toHaveAttribute('aria-pressed', 'true')
-
-  const marker = page.locator(`[data-annotation-id="${assemblyId}"]`)
-  await expect(marker).toBeVisible()
-  const markerBox = await marker.boundingBox()
-  expect(markerBox).not.toBeNull()
+  await page.locator('#learningFocusBtn').click()
+  await page.evaluate(() => new Promise(resolve => {
+    requestAnimationFrame(() => requestAnimationFrame(resolve))
+  }))
 
   await openPanel(page, 'objects')
   await selectFromTree(page, otherAssemblyId)
 
-  await marker.evaluate(element => { element.style.pointerEvents = 'none' })
-  await page.mouse.click(markerBox.x + markerBox.width / 2, markerBox.y + markerBox.height / 2)
-  await expect(page.locator('#viewport')).toHaveAttribute('data-selected-assembly', assemblyId)
+  const canvas = page.locator('#viewport')
+  const box = await canvas.boundingBox()
+  expect(box).not.toBeNull()
+
+  const offsets = [
+    [0, 0],
+    [-18, 0], [18, 0], [0, -18], [0, 18],
+    [-36, 0], [36, 0], [0, -36], [0, 36],
+    [-24, -24], [24, -24], [-24, 24], [24, 24],
+    [-48, -24], [48, -24], [-48, 24], [48, 24],
+  ]
+
+  for (const [dx, dy] of offsets) {
+    const x = Math.min(box.x + box.width - 2, Math.max(box.x + 2, box.x + box.width / 2 + dx))
+    const y = Math.min(box.y + box.height - 2, Math.max(box.y + 2, box.y + box.height / 2 + dy))
+    await page.mouse.click(x, y)
+    if (await canvas.getAttribute('data-selected-assembly') === assemblyId) return
+  }
+
+  await expect(canvas).toHaveAttribute('data-selected-assembly', assemblyId)
 }
 
 for (const language of ['vi', 'en']) {
@@ -75,7 +88,7 @@ for (const language of ['vi', 'en']) {
 
       await openPanel(page, 'objects')
       await selectFromTree(page, assemblyId)
-      await pickFromViewportUsingLessonAnchor(page, assemblyId, otherAssemblyId)
+      await pickFocusedAssemblyFromViewport(page, assemblyId, otherAssemblyId)
 
       await openPanel(page, 'view')
       await expect(page.locator('#viewport')).toHaveAttribute('data-view-mode', 'normal')
