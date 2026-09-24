@@ -537,7 +537,8 @@ dt { color: var(--muted); } dd { margin: 0; font-weight: 700; }
 
 @media (max-width: 560px) {
   .topbar { gap: 6px; }
-  h1 { max-width: 37vw; font-size: 14px; line-height: 1.2; }
+  h1 { max-width: 37vw; font-size: 14px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .brand-suffix { display: none; }
   .theme-switcher button { min-width: 44px; padding-inline: 8px; font-size: 12px; }
   .language-switcher button { min-width: 40px; padding-inline: 7px; }
   .workspace { grid-template-rows: minmax(0, 55%) minmax(0, 45%); }
