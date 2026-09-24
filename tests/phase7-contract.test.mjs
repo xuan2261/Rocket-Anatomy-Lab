@@ -41,13 +41,17 @@ test('CI has a pinned-environment visual regression lane', () => {
   assert.match(ci, /name: E2E \+ accessibility Chromium/)
 })
 
-test('four CI-native golden snapshots are committed', () => {
+test('eight CI-native theme and language golden snapshots are committed', () => {
   const files = fs.readdirSync(snapshotDir).filter(name => name.endsWith('.png')).sort()
   assert.deepEqual(files, [
-    'shell-en-desktop-chromium-linux.png',
-    'shell-en-mobile-chromium-linux.png',
-    'shell-vi-desktop-chromium-linux.png',
-    'shell-vi-mobile-chromium-linux.png',
+    'shell-en-dark-desktop-chromium-linux.png',
+    'shell-en-dark-mobile-chromium-linux.png',
+    'shell-en-light-desktop-chromium-linux.png',
+    'shell-en-light-mobile-chromium-linux.png',
+    'shell-vi-dark-desktop-chromium-linux.png',
+    'shell-vi-dark-mobile-chromium-linux.png',
+    'shell-vi-light-desktop-chromium-linux.png',
+    'shell-vi-light-mobile-chromium-linux.png',
   ])
 })
 
