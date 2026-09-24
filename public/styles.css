@@ -148,6 +148,11 @@ h1 {
   border-color: transparent;
   background: transparent;
 }
+
+.language-switcher button {
+  min-width: 44px;
+  min-height: 44px;
+}
 .status-badge {
   max-width: min(31vw, 380px);
   min-width: 0;
@@ -356,6 +361,8 @@ dt { color: var(--muted); } dd { margin: 0; font-weight: 700; }
 }
 .slider-row { grid-template-columns: auto 1fr auto; align-items: center; }
 .timeline-slider-row, .section-slider-row { grid-template-columns: 1fr; }
+.timeline-slider-row input { min-height: 44px; }
+.section-slider-row input { min-height: 44px; }
 .control-label { font-size: 12px; color: var(--muted); }
 .primary-action {
   background: var(--accent-soft);
@@ -405,6 +412,7 @@ dt { color: var(--muted); } dd { margin: 0; font-weight: 700; }
 .learning-disclosure[aria-expanded="false"]::before { transform: rotate(-90deg); }
 .learning-heading > strong { color: var(--muted); font-size: 12px; white-space: nowrap; }
 .learning-body { display: grid; gap: 14px; }
+.learning-controls button { min-height: 44px; }
 .learning-body[hidden] { display: none; }
 .learning-share-status { min-height: 18px; color: var(--muted); font-size: 12px; }
 
