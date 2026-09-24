@@ -24,7 +24,7 @@
     "test:e2e": "playwright test --grep-invert @visual",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:report": "playwright show-report",
-    "verify:ci": "npm run build && npm run fetch:source && npm run fetch:detail-assets && npm run build:stage-detail-assets && npm run verify:phase7 && npm run qualify:anatomy && npm run qualify:anatomy-navigation && npm run qualify:procedural-detail && npm run qualify:real-detail && npm run qualify:stage-detail && npm run check:localization",
+    "verify:ci": "npm run build && npm run fetch:source && npm run fetch:detail-assets && npm run build:stage-detail-assets && npm run verify:phase7 && npm run qualify:anatomy && npm run qualify:anatomy-navigation && npm run qualify:procedural-detail && npm run qualify:real-detail && npm run qualify:stage-detail && npm run qualify:detail-inspector && npm run check:localization",
     "check:localization": "node scripts/check-i18n-ui.mjs",
     "test:all": "npm run verify:ci && npm run test:e2e && npm run test:visual",
     "qualify:learning": "node --test tests/learning.test.mjs tests/phase6-contract.test.mjs",
@@ -47,7 +47,9 @@
     "verify:phase15": "npm run verify:phase14 && npm run qualify:real-detail",
     "build:stage-detail-assets": "node scripts/build-stage-detail-packages.mjs",
     "qualify:stage-detail": "node --test tests/stage-detail-manifest.test.mjs tests/stage-detail-output.qualify.mjs tests/phase16-contract.test.mjs",
-    "verify:phase16": "npm run build && npm run build:stage-detail-assets && npm run verify:phase15 && npm run qualify:stage-detail"
+    "verify:phase16": "npm run build && npm run build:stage-detail-assets && npm run verify:phase15 && npm run qualify:stage-detail",
+    "qualify:detail-inspector": "node --test tests/detail-inspector.test.mjs tests/phase17-contract.test.mjs",
+    "verify:phase17": "npm run verify:phase16 && npm run qualify:detail-inspector"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
