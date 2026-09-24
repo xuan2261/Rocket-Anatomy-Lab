@@ -30,8 +30,8 @@ jobs:
           cache: npm
           cache-dependency-path: package.json
       - run: npm install --no-fund --no-audit
-      - run: npm run fetch:source
       - run: npm run build
+      - run: npm run fetch:source
       - run: npx playwright install --with-deps chromium
       - run: npm run test:visual:update
       - name: Upload refreshed visual baselines
