@@ -23,6 +23,7 @@ import { createLearningController } from './learning-controller.mjs'
 import { createAnatomyController } from './anatomy-controller.mjs'
 import { anatomyCameraScale } from './core/anatomyNavigation.js'
 import { createProceduralDetailLayer } from './procedural-detail-layer.mjs'
+import { createRealDetailLoader } from './real-detail-loader.mjs'
 import { entityDescription, entityLabel, onLanguageChange, t } from './i18n.mjs'
 
 const EDUCATION_ASSET = './assets/saturn-v-education.glb'
@@ -69,6 +70,7 @@ let sectionController = null
 let learningController = null
 let anatomyController = null
 let proceduralDetailLayer = null
+let realDetailLoader = null
 let schematicDetailVisible = false
 let schematicDetailExplode = 0
 let sectionState = null
@@ -408,6 +410,7 @@ function updateSectionCutaway(nextState) {
   const enabled = nextState.enabled
   applySectionMaterialClipping(enabled)
   proceduralDetailLayer?.setSectionEnabled?.(enabled)
+  realDetailLoader?.setSectionEnabled?.(enabled)
   const capped = enabled && nextState.capped && sectionCappingSupported
   for (const stencil of sectionStencilMeshes) stencil.visible = capped
   if (sectionCapMesh) {
@@ -563,6 +566,20 @@ function focusCameraOnGroup(groupId, durationMs) {
   startCameraTransition(sphere.center.clone().add(direction.multiplyScalar(distance)), sphere.center, durationMs)
 }
 
+function focusCameraOnObject(object, durationMs) {
+  if (!object) return
+  const box = new THREE.Box3().setFromObject(object)
+  if (box.isEmpty()) return
+  const sphere = box.getBoundingSphere(new THREE.Sphere())
+  const radius = Math.max(sphere.radius, 0.01)
+  const fov = THREE.MathUtils.degToRad(camera.fov)
+  const distance = radius / Math.sin(fov / 2) * 1.55
+  const direction = camera.position.clone().sub(controls.target)
+  if (direction.lengthSq() < 1e-8) direction.set(1, 0.65, 1.25)
+  direction.normalize()
+  startCameraTransition(sphere.center.clone().add(direction.multiplyScalar(distance)), sphere.center, durationMs)
+}
+
 function anatomyReferencePoint(node) {
   if (!sectionModelBox || !node) return null
   const point = sectionModelBox.getCenter(new THREE.Vector3())
@@ -610,13 +627,20 @@ function focusAnatomyReference(node, { inspect = false } = {}) {
   cancelPresentationMotion()
   timelineController?.resetSilently?.()
   timelineMode = false
+
+  const activeDetailNodeId = realDetailLoader?.getActiveNodeId?.()
+  if (activeDetailNodeId && activeDetailNodeId !== node.id) void realDetailLoader.hideAll()
+
   state = selectPart(state, node.focusAssemblyId)
 
   if (inspect) {
-    schematicDetailVisible = true
-    schematicDetailExplode = Math.max(schematicDetailExplode, 0.18)
-    proceduralDetailLayer?.setVisible(true)
-    proceduralDetailLayer?.setExplode(schematicDetailExplode)
+    const realDetailLoaded = realDetailLoader?.isLoaded?.(node.id) === true
+    if (!realDetailLoaded) {
+      schematicDetailVisible = true
+      schematicDetailExplode = Math.max(schematicDetailExplode, 0.18)
+      proceduralDetailLayer?.setVisible(true)
+      proceduralDetailLayer?.setExplode(schematicDetailExplode)
+    }
     state = setMode(state, 'xray')
     sectionController?.applyPreset?.({
       enabled: true,
@@ -630,6 +654,30 @@ function focusAnatomyReference(node, { inspect = false } = {}) {
   const reducedMotion = timelineController?.getState?.().reducedMotion === true
   focusCameraOnReference(node, reducedMotion ? 0 : 420)
   renderUiAndModel()
+}
+
+async function loadRealDetailForAnatomy(node) {
+  if (!node?.focusAssemblyId || rendererKind !== 'assembly' || !realDetailLoader?.hasDetail?.(node.id)) return false
+
+  cancelPresentationMotion()
+  timelineController?.resetSilently?.()
+  timelineMode = false
+
+  schematicDetailVisible = false
+  schematicDetailExplode = 0
+  proceduralDetailLayer?.setVisible(false)
+  proceduralDetailLayer?.setExplode(0)
+
+  const loaded = await realDetailLoader.loadForNode(node.id)
+  if (!loaded?.root) return false
+
+  state = selectPart(state, node.focusAssemblyId)
+  state = setMode(state, 'ghost')
+  renderUiAndModel()
+
+  const reducedMotion = timelineController?.getState?.().reducedMotion === true
+  focusCameraOnObject(loaded.root, reducedMotion ? 0 : 520)
+  return true
 }
 
 function restoreOverviewCamera(durationMs) {
@@ -932,6 +980,7 @@ resetBtn.addEventListener('click', () => {
   schematicDetailExplode = 0
   proceduralDetailLayer?.setVisible(false)
   proceduralDetailLayer?.setExplode(0)
+  void realDetailLoader?.hideAll?.()
   renderUiAndModel()
   if (overviewCamera) setCameraPose(overviewCamera.position, overviewCamera.target)
 })
@@ -991,6 +1040,7 @@ window.addEventListener('pagehide', () => {
   learningController?.destroy?.()
   anatomyController?.destroy?.()
   proceduralDetailLayer?.dispose?.()
+  void realDetailLoader?.dispose?.()
   unsubscribeLanguage()
   sectionController?.destroy?.()
   resizeObserver.disconnect()
@@ -1020,6 +1070,7 @@ window.addEventListener('pagehide', () => {
 }, { once: true })
 
 await loadModel()
+realDetailLoader = createRealDetailLoader({ scene, modelBox: sectionModelBox, sectionPlane })
 proceduralDetailLayer = createProceduralDetailLayer({ modelBox: sectionModelBox, sectionPlane })
 scene.add(proceduralDetailLayer.root)
 createSectionCutaway()
@@ -1059,6 +1110,7 @@ anatomyController = createAnatomyController({
   disabled: rendererKind !== 'assembly',
   onFocusReference: node => focusAnatomyReference(node),
   onInspectReference: node => focusAnatomyReference(node, { inspect: true }),
+  onLoadRealDetail: node => loadRealDetailForAnatomy(node),
   getReferenceAnchor: anatomyReferenceAnchor,
 })
 renderUiAndModel()
