@@ -703,6 +703,8 @@ export function createAnatomyController({
     if (!item || detail?.sourceKind !== 'generated-stl-package' || !loadedDetailNodes.has(item.id)) return false
     const valid = partId === null || detail.sourceParts.some(part => part.id === partId)
     if (!valid) return false
+    const previous = hoveredDetailPartByNode.get(item.id) ?? null
+    if (previous === partId) return true
     if (partId) hoveredDetailPartByNode.set(item.id, partId)
     else hoveredDetailPartByNode.delete(item.id)
     onHoverRealDetailPart(item, partId)
