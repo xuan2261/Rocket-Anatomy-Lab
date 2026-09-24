@@ -24,15 +24,17 @@
     "test:e2e": "playwright test --grep-invert @visual",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:report": "playwright show-report",
-    "verify:ci": "npm run build && npm run fetch:source && npm run verify:phase6 && npm run check:localization",
+    "verify:ci": "npm run build && npm run fetch:source && npm run verify:phase7 && npm run check:localization",
     "check:localization": "node scripts/check-i18n-ui.mjs",
-    "test:all": "npm run verify:ci && npm run test:e2e",
+    "test:all": "npm run verify:ci && npm run test:e2e && npm run test:visual",
     "qualify:learning": "node --test tests/learning.test.mjs tests/phase6-contract.test.mjs",
     "verify:phase6": "npm run verify:phase5 && npm run qualify:learning",
     "test:a11y": "playwright test e2e/accessibility.spec.mjs",
     "test:visual": "playwright test e2e/visual.spec.mjs",
     "test:visual:update": "playwright test e2e/visual.spec.mjs --update-snapshots",
-    "smoke:deployed": "node scripts/smoke-deployed.mjs"
+    "smoke:deployed": "node scripts/smoke-deployed.mjs",
+    "qualify:quality": "node --test tests/phase7-contract.test.mjs",
+    "verify:phase7": "npm run verify:phase6 && npm run qualify:quality"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
