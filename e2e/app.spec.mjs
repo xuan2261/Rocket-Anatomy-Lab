@@ -159,6 +159,47 @@ test.describe('Rocket Anatomy Lab — luồng chính', () => {
     await expect(page.locator('#anatomySearchInput')).toHaveValue('')
   })
 
+  test('Phase 16 Stage 1 package giữ 4 part độc lập, bóc tách và reset được', async ({ page }) => {
+    await page.goto('/?structure=anatomy&anatomy=sic-stage&lang=vi')
+    await waitForRealAsset(page)
+    await openControlPanel(page, 'objects')
+
+    await expect(page.locator('#anatomyTitle')).toContainText('S-IC')
+    await expect(page.locator('#anatomyRealDetailCard')).toBeVisible()
+    await expect(page.locator('#anatomyRealDetailTitle')).toContainText('Stage 1')
+    await expect(page.locator('#anatomyRealDetailStatus')).toContainText('4 part')
+
+    const slider = page.locator('#anatomyRealDetailExplodeSlider')
+    const parts = page.locator('.real-detail-part-button')
+    await expect(page.locator('#anatomyRealDetailPartsWrap')).toBeVisible()
+    await expect(parts).toHaveCount(4)
+    await expect(slider).toBeDisabled()
+    await expect(parts.first()).toBeDisabled()
+
+    await page.locator('#anatomyLoadRealDetailBtn').click()
+    await expect(page.locator('#anatomyRealDetailStatus')).toContainText('Đã tải mô hình NASA thật', { timeout: 30_000 })
+    await expect(page.locator('#modeValue')).toContainText('Bóng mờ')
+    await expect(slider).toBeEnabled()
+    await expect(parts.first()).toBeEnabled()
+
+    await slider.fill('55')
+    await expect(slider).toHaveValue('55')
+
+    const firstPart = parts.first()
+    await firstPart.click()
+    await expect(firstPart).toHaveAttribute('aria-pressed', 'false')
+    await firstPart.click()
+    await expect(firstPart).toHaveAttribute('aria-pressed', 'true')
+
+    await openControlPanel(page, 'view')
+    await page.locator('#resetBtn').click()
+    await openControlPanel(page, 'objects')
+    await expect(slider).toHaveValue('0')
+    for (let index = 0; index < 4; index += 1) {
+      await expect(parts.nth(index)).toHaveAttribute('aria-pressed', 'true')
+    }
+  })
+
   test('Phase 15 lazy-load mô hình Lunar Module thật đã xác minh', async ({ page }) => {
     await page.goto('/?structure=anatomy&anatomy=apollo-lm-sla&lang=vi')
     await waitForRealAsset(page)
