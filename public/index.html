@@ -170,6 +170,24 @@
             </label>
             <button id="inspectInsideBtn" type="button" class="primary-action" data-i18n="viewer.inspectInside">Khám phá bên trong</button>
             <p class="capability-note" data-i18n="viewer.inspectInsideHint">Bật X-quang và mặt cắt tại vùng đang chọn. Mô hình nguồn chủ yếu là vỏ ngoài nên chỉ hiển thị geometry thực có trong GLB.</p>
+
+            <div class="schematic-detail-card" data-i18n-aria-label="detail.aria" aria-label="Lớp chi tiết 3D sơ đồ">
+              <div class="schematic-detail-heading">
+                <div>
+                  <span class="panel-kicker" data-i18n="detail.kicker">CHI TIẾT 3D BỔ SUNG</span>
+                  <strong data-i18n="detail.title">Lớp sơ đồ 3D</strong>
+                </div>
+                <button id="schematicDetailBtn" type="button" aria-pressed="false" data-i18n="detail.show">Hiện</button>
+              </div>
+              <label class="slider-row" for="schematicExplodeSlider">
+                <span data-i18n="detail.compact">Gọn</span>
+                <input id="schematicExplodeSlider" type="range" min="0" max="100" value="0" disabled data-i18n-aria-label="detail.explodeAria" aria-label="Mức bóc tách lớp chi tiết sơ đồ" />
+                <span data-i18n="detail.exploded">Bóc tách</span>
+              </label>
+              <p id="schematicDetailStatus" class="detail-status" role="status" aria-live="polite" data-i18n="detail.off">Đang tắt</p>
+              <p class="capability-note" data-i18n="detail.note">Đây là hình học minh họa tương đối theo mô hình hiện tại, không phải geometry chế tạo hay kỹ thuật chính xác.</p>
+            </div>
+
             <button id="resetBtn" type="button" data-i18n="viewer.reset">Đặt lại góc nhìn</button>
           </div>
         </section>
