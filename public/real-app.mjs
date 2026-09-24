@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { updateStaticIndexedBounds, firstVisibleAssemblyHit } from './assembly-picking.mjs'
 import {
   initialState,
   selectPart,
@@ -242,6 +243,7 @@ function applyAssemblyMapping(root, parserJson) {
     throw new Error('Assembly GLB safety/meaning metadata is invalid')
   }
 
+  updateStaticIndexedBounds(root)
   root.updateMatrixWorld(true)
   const modelBox = new THREE.Box3().setFromObject(root)
   const { axis, key, extent } = longestAxis(modelBox)
@@ -1089,7 +1091,7 @@ canvas.addEventListener('pointerup', event => {
   const detailHit = realDetailLoader?.pickPart?.(raycaster)
   if (detailHit?.partId && anatomyController?.selectRealDetailPart?.(detailHit.partId, { push: true })) return
 
-  const hit = raycaster.intersectObject(model, true).find(item => item.object.visible)
+  const hit = firstVisibleAssemblyHit(raycaster, model)
   const id = hit?.object?.userData?.rocketGroupId ?? null
   if (id) {
     state = selectPart(state, id)

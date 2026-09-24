@@ -102,6 +102,9 @@ for (const language of ['vi', 'en']) {
     await expect(page.locator('[data-mode="normal"]')).toHaveAttribute('aria-pressed', 'true')
     await captureViewer(page, `selection-reload-${language}-normal.png`)
 
+    // Keep non-selected context in the overview comparison.
+    await page.locator('[data-control-tab="view"]').click()
+    await page.locator('#resetBtn').click()
     await page.locator('[data-control-tab="objects"]').click()
     await page.locator('#tree .tree-select').nth(2).click()
     await expect(page.locator('#viewport')).toHaveAttribute('data-selected-assembly', 'center-body-assembly')
