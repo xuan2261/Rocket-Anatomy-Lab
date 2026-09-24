@@ -398,6 +398,91 @@ h1 {
 .anatomy-node-heading strong { min-width: 0; font-size: 13px; line-height: 1.25; }
 .anatomy-node-copy { color: var(--muted); font-size: 12px; line-height: 1.35; }
 .anatomy-node-meta { color: var(--accent-strong); font-size: 11px; font-weight: 650; }
+.anatomy-search {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+.anatomy-search input {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--control);
+  color: var(--text);
+  padding: 0 11px;
+  font: inherit;
+}
+.anatomy-search input:hover { border-color: var(--border-strong); }
+.anatomy-search input:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.anatomy-search-status {
+  min-height: 18px;
+  margin: -3px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+.anatomy-evidence-details { margin-top: 9px; }
+.anatomy-evidence-grid {
+  display: grid;
+  gap: 7px;
+  margin: 9px 0 0;
+}
+.anatomy-evidence-grid > div {
+  display: grid;
+  grid-template-columns: minmax(88px, .8fr) minmax(0, 1.5fr);
+  gap: 9px;
+  padding-top: 7px;
+  border-top: 1px solid var(--border);
+}
+.anatomy-evidence-grid dt {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+.anatomy-evidence-grid dd {
+  margin: 0;
+  color: var(--text);
+  font-size: 12px;
+}
+.anatomy-share-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin-top: 8px;
+}
+.anatomy-reference-layer { pointer-events: none; }
+.anatomy-reference-marker {
+  pointer-events: auto;
+  position: absolute;
+  z-index: 8;
+  min-height: 36px;
+  max-width: min(220px, 56vw);
+  transform: translate(-50%, -50%);
+  border-color: color-mix(in srgb, var(--accent) 65%, var(--border));
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
+  color: var(--accent-strong);
+  box-shadow: var(--shadow-subtle);
+  backdrop-filter: blur(10px);
+  font-size: 12px;
+  font-weight: 750;
+  white-space: normal;
+}
+.anatomy-reference-marker::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  display: inline-block;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
 .anatomy-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
 .tree { display: grid; gap: 6px; }
@@ -660,7 +745,9 @@ dt { color: var(--muted); } dd { margin: 0; font-weight: 700; }
   .structure-mode-switcher button,
   .anatomy-node,
   .anatomy-crumb,
-  .anatomy-source-link {
+  .anatomy-source-link,
+  .anatomy-search input,
+  .anatomy-reference-marker {
     min-height: 48px;
   }
 
