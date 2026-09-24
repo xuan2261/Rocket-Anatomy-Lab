@@ -303,6 +303,8 @@ export function createAnatomyController({
             if (!detailLoaded || !visible) return
             selectedDetailPartByNode.set(item.id, part.id)
             onSelectRealDetailPart(item, part.id)
+            if (ghostOtherPartsByNode.get(item.id) === true) void onGhostOtherRealDetailParts(item, part.id, true)
+            if (onlyPartByNode.get(item.id) === true) void onShowOnlyRealDetailPart(item, part.id, true)
             renderAnatomy()
             syncUrl({ push: true })
           })
@@ -321,6 +323,8 @@ export function createAnatomyController({
             if (applied === false) return
             visibility.set(part.id, nextVisible)
             if (!nextVisible && selectedDetailPartByNode.get(item.id) === part.id) {
+              if (ghostOtherPartsByNode.get(item.id) === true) await onGhostOtherRealDetailParts(item, part.id, false)
+              if (onlyPartByNode.get(item.id) === true) await onShowOnlyRealDetailPart(item, part.id, false)
               selectedDetailPartByNode.delete(item.id)
               ghostOtherPartsByNode.delete(item.id)
               onlyPartByNode.delete(item.id)
@@ -685,6 +689,8 @@ export function createAnatomyController({
       onlyPartByNode.delete(item.id)
     }
     onSelectRealDetailPart(item, partId)
+    if (partId && ghostOtherPartsByNode.get(item.id) === true) void onGhostOtherRealDetailParts(item, partId, true)
+    if (partId && onlyPartByNode.get(item.id) === true) void onShowOnlyRealDetailPart(item, partId, true)
     if (focus && partId) onFocusRealDetailPart(item, partId)
     renderAnatomy()
     syncUrl({ push })
