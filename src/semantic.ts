@@ -96,7 +96,10 @@ export const semanticGroupViewState = (
   const selected = state.selectedId === group.id
   const visibleByIsolation = state.isolatedId ? state.isolatedId === group.id : true
   const visible = visibleByIsolation && !state.hiddenIds.has(group.id)
-  const opacity = opacityForMode(state.mode, selected)
+  const hasVisibleSelection = Boolean(state.selectedId)
+    && !state.hiddenIds.has(state.selectedId as string)
+    && (!state.isolatedId || state.isolatedId === state.selectedId)
+  const opacity = opacityForMode(state.mode, selected, hasVisibleSelection)
   return {
     id: group.id,
     visible,
@@ -166,8 +169,9 @@ export const validateSemanticManifest = (manifest: SemanticManifest): string[] =
   return errors
 }
 
-const opacityForMode = (mode: ViewerMode, selected: boolean): number => {
+const opacityForMode = (mode: ViewerMode, selected: boolean, hasSelection: boolean): number => {
   if (mode === 'ghost') return selected ? 1 : 0.34
   if (mode === 'xray') return selected ? 1 : 0.14
+  if (hasSelection) return selected ? 1 : 0.52
   return 1
 }
