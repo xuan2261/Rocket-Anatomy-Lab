@@ -25,7 +25,7 @@ export function createLearningController({
   const deepLinkedLesson = lessonIdFromSearch(location.search, lessonIds)
   let state = createLearningState(lessonIds, deepLinkedLesson)
   let isDisabled = Boolean(disabled)
-  let annotationsVisible = true
+  let annotationsVisible = false
   let expanded = true
   let copyTimer = null
 
@@ -60,7 +60,8 @@ export function createLearningController({
     if (!annotationLayer) return
     annotationLayer.replaceChildren()
     markerById.clear()
-    for (const item of rocketLearningLessons) {
+    const item = lesson()
+    if (item) {
       const marker = document.createElement('button')
       marker.type = 'button'
       marker.className = 'annotation-marker'
@@ -71,7 +72,7 @@ export function createLearningController({
       markerById.set(item.assemblyId, marker)
       annotationLayer.append(marker)
     }
-    annotationLayer.hidden = isDisabled || !annotationsVisible
+    annotationLayer.hidden = isDisabled || !annotationsVisible || !item
   }
 
   const render = () => {

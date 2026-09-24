@@ -79,6 +79,23 @@ test.describe('Rocket Anatomy Lab — luồng chính', () => {
     await expect(page.locator('#timelineStatus')).toContainText('Trạng thái lắp ghép ban đầu')
   })
 
+  test('preset khám phá bên trong kết hợp X-quang, mặt cắt và vùng đang chọn', async ({ page }) => {
+    await page.goto('/')
+    await waitForRealAsset(page)
+
+    await openControlPanel(page, 'objects')
+    await page.locator('#tree').getByRole('button', { name: /Cụm thân dưới/ }).click()
+
+    await openControlPanel(page, 'view')
+    await page.locator('#inspectInsideBtn').click()
+    await expect(page.locator('#modeValue')).toContainText('X-quang')
+
+    await openControlPanel(page, 'section')
+    await expect(page.locator('#sectionToggleBtn')).toContainText('Mặt cắt: Bật')
+    await expect(page.locator('#sectionStatus')).toContainText('Y')
+    await expect(page.locator('#sectionStatus')).toContainText('26%')
+  })
+
   test('mặt cắt hoạt động cùng các chế độ xem trong cùng Control Center', async ({ page }) => {
     await page.goto('/')
     await waitForRealAsset(page)

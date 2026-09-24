@@ -55,12 +55,19 @@ test.describe('Phase 6 — guided learning', () => {
     await expect(disclosure).toHaveAttribute('aria-expanded', 'true')
 
     const markers = page.locator('.annotation-marker')
-    await expect(markers).toHaveCount(5)
     const annotationToggle = page.locator('#learningAnnotationsBtn')
-    await expect(annotationToggle).toHaveAttribute('aria-pressed', 'true')
-    await annotationToggle.click()
     await expect(annotationToggle).toHaveAttribute('aria-pressed', 'false')
     await expect(page.locator('#annotationLayer')).toBeHidden()
+    await expect(markers).toHaveCount(1)
+    await expect(markers.first()).toHaveAttribute('data-annotation-id', 'base-assembly')
+
+    await annotationToggle.click()
+    await expect(annotationToggle).toHaveAttribute('aria-pressed', 'true')
+    await expect(page.locator('#annotationLayer')).toBeVisible()
+
+    await page.locator('#learningNextBtn').click()
+    await expect(markers).toHaveCount(1)
+    await expect(markers.first()).toHaveAttribute('data-annotation-id', 'lower-body-assembly')
   })
 
   test('fallback keeps Phase 6 fail-closed', async ({ page }) => {

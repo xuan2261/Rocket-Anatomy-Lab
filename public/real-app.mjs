@@ -37,6 +37,7 @@ const isolateBtn = document.querySelector('#isolateBtn')
 const hideBtn = document.querySelector('#hideBtn')
 const showAllBtn = document.querySelector('#showAllBtn')
 const explodeSlider = document.querySelector('#explodeSlider')
+const inspectInsideBtn = document.querySelector('#inspectInsideBtn')
 const resetBtn = document.querySelector('#resetBtn')
 const modeChip = document.querySelector('#modeChip')
 const modeButtons = [...document.querySelectorAll('[data-mode]')]
@@ -758,6 +759,27 @@ modeButtons.forEach(button => button.addEventListener('click', () => {
   state = setMode(state, button.dataset.mode)
   renderUiAndModel()
 }))
+
+inspectInsideBtn?.addEventListener('click', () => {
+  cancelPresentationMotion()
+  timelineController?.resetSilently?.()
+  timelineMode = false
+  state = setMode(state, 'xray')
+  const segment = nasaSaturnVAssemblyManifest.segments.find(item => item.id === state.selectedId)
+  const position = segment ? (segment.start + segment.end) / 2 : 0.5
+  sectionController?.applyPreset?.({
+    enabled: true,
+    axis: 'y',
+    position,
+    inverted: false,
+    capped: true,
+  })
+  if (state.selectedId) {
+    const reducedMotion = timelineController?.getState?.().reducedMotion === true
+    focusCameraOnGroup(state.selectedId, reducedMotion ? 0 : 420)
+  }
+  renderUiAndModel()
+})
 
 explodeSlider.addEventListener('input', () => {
   cancelPresentationMotion()
