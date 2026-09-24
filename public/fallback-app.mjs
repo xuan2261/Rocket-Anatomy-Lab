@@ -6,6 +6,7 @@ import { demoManifest } from './core/demoManifest.js'
 import { nasaSaturnVAssemblyManifest, nasaSaturnVAssemblySemanticManifest } from './core/assemblyManifest.js'
 import { createTimelineController } from './timeline-controller.mjs'
 import { createSectionController } from './section-controller.mjs'
+import { createLearningController } from './learning-controller.mjs'
 import { entityDescription, entityLabel, onLanguageChange, t } from './i18n.mjs'
 
 const canvas = document.querySelector('#viewport')
@@ -43,6 +44,9 @@ const timelineController = createTimelineController({
 const sectionController = createSectionController({
   disabled: true,
   cappingSupported: false,
+})
+const learningController = createLearningController({
+  disabled: true,
 })
 
 function resize() {
@@ -222,4 +226,4 @@ render()
 
 canvas.addEventListener('pointercancel',()=>{dragging=false;lastPointer=null;pointerStart=null})
 
-window.addEventListener('pagehide', () => { timelineController.destroy(); sectionController.destroy(); unsubscribeLanguage() }, { once: true })
+window.addEventListener('pagehide', () => { timelineController.destroy(); sectionController.destroy(); learningController.destroy(); unsubscribeLanguage() }, { once: true })
