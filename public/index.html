@@ -154,6 +154,28 @@
                     <span data-i18n="anatomy.realDetailExploded">Bóc tách</span>
                   </label>
                   <div id="anatomyRealDetailPartsList" class="real-detail-parts-list" data-i18n-aria-label="anatomy.realDetailPartsAria" aria-label="Danh sách part NASA thật"></div>
+                  <section id="anatomyPartInspector" class="real-detail-inspector" data-i18n-aria-label="anatomy.partInspectorAria" aria-label="Thanh tra part NASA" hidden>
+                    <div class="real-detail-inspector-heading">
+                      <div>
+                        <span class="panel-kicker" data-i18n="anatomy.partInspectorKicker">PART ĐANG CHỌN</span>
+                        <strong id="anatomyPartInspectorTitle">—</strong>
+                      </div>
+                      <span id="anatomyPartInspectorBadge" class="anatomy-kind-badge" data-i18n="anatomy.partInspectorSource">NASA source</span>
+                    </div>
+                    <nav id="anatomyPartBreadcrumbs" class="anatomy-breadcrumbs" data-i18n-aria-label="anatomy.partBreadcrumbAria" aria-label="Đường dẫn part NASA"></nav>
+                    <div class="real-detail-inspector-actions">
+                      <button id="anatomyPartFocusBtn" type="button" data-i18n="anatomy.partFocus">Tập trung part</button>
+                      <button id="anatomyPartGhostBtn" type="button" aria-pressed="false" data-i18n="anatomy.partGhost">Làm mờ part khác</button>
+                      <button id="anatomyPartOnlyBtn" type="button" aria-pressed="false" data-i18n="anatomy.partOnly">Chỉ hiện part này</button>
+                    </div>
+                    <dl class="anatomy-evidence-grid real-detail-stats">
+                      <div><dt data-i18n="anatomy.partMeshes">Mesh</dt><dd id="anatomyPartMeshCount">—</dd></div>
+                      <div><dt data-i18n="anatomy.partTriangles">Tam giác</dt><dd id="anatomyPartTriangleCount">—</dd></div>
+                      <div><dt data-i18n="anatomy.partDrawCalls">Draw calls ~</dt><dd id="anatomyPartDrawCalls">—</dd></div>
+                      <div><dt data-i18n="anatomy.partBounds">Bounds</dt><dd id="anatomyPartBounds">—</dd></div>
+                    </dl>
+                    <p id="anatomyPartProvenance" class="source-note"></p>
+                  </section>
                 </div>
                 <p id="anatomyRealDetailStatus" class="detail-status" role="status" aria-live="polite" data-i18n="anatomy.realDetailReady">Sẵn sàng tải theo yêu cầu</p>
                 <p class="capability-note" data-i18n="anatomy.realDetailNote">Geometry đến từ asset NASA đã ghim; vị trí/scale khi đặt vào Saturn V tổng thể vẫn là ánh xạ giáo dục gần đúng.</p>
