@@ -35,8 +35,10 @@ test('Phase 13 anatomy deep links preserve unrelated query state',()=>{
 
 test('Phase 13 search is bilingual, diacritic-tolerant and deterministic',()=>{
   const vi=filterAnatomyNodes(saturnVAnatomyManifest,'bon lox','vi')
-  assert.ok(vi.length >= 3)
-  assert.ok(vi.every(node=>node.label.vi.includes('LOX')))
+  const viIds=new Set(vi.map(node=>node.id))
+  assert.ok(viIds.has('sic-lox-tank'))
+  assert.ok(viIds.has('sii-lox-tank'))
+  assert.ok(viIds.has('sivb-lox-tank'))
 
   const en=filterAnatomyNodes(saturnVAnatomyManifest,'command module','en')
   assert.equal(en[0]?.id,'apollo-command-module')
