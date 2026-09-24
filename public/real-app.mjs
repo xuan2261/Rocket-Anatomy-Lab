@@ -680,6 +680,17 @@ async function loadRealDetailForAnatomy(node) {
   return true
 }
 
+function focusRealDetailPart(node, partId) {
+  const object = realDetailLoader?.getPartObject?.(node.id, partId)
+  if (!object) return false
+  cancelPresentationMotion()
+  timelineController?.resetSilently?.()
+  timelineMode = false
+  const reducedMotion = timelineController?.getState?.().reducedMotion === true
+  focusCameraOnObject(object, reducedMotion ? 0 : 420)
+  return true
+}
+
 function restoreOverviewCamera(durationMs) {
   if (!overviewCamera) return
   startCameraTransition(overviewCamera.position, overviewCamera.target, durationMs)
@@ -986,6 +997,20 @@ resetBtn.addEventListener('click', () => {
   if (overviewCamera) setCameraPose(overviewCamera.position, overviewCamera.target)
 })
 
+canvas.addEventListener('pointermove', event => {
+  if (!realDetailLoader || !anatomyController) return
+  const rect = canvas.getBoundingClientRect()
+  pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+  pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
+  raycaster.setFromCamera(pointer, camera)
+  const detailHit = realDetailLoader.pickPart(raycaster)
+  anatomyController.hoverRealDetailPart(detailHit?.partId ?? null)
+})
+
+canvas.addEventListener('pointerleave', () => {
+  anatomyController?.hoverRealDetailPart?.(null)
+})
+
 canvas.addEventListener('pointerdown', event => {
   pointerDown = { x: event.clientX, y: event.clientY }
 })
@@ -999,6 +1024,10 @@ canvas.addEventListener('pointerup', event => {
   pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
   pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
   raycaster.setFromCamera(pointer, camera)
+
+  const detailHit = realDetailLoader?.pickPart?.(raycaster)
+  if (detailHit?.partId && anatomyController?.selectRealDetailPart?.(detailHit.partId, { push: true })) return
+
   const hit = raycaster.intersectObject(model, true).find(item => item.object.visible)
   const id = hit?.object?.userData?.rocketGroupId ?? null
   if (id) {
@@ -1114,6 +1143,12 @@ anatomyController = createAnatomyController({
   onLoadRealDetail: node => loadRealDetailForAnatomy(node),
   onSetRealDetailExplode: (node, amount) => realDetailLoader?.setExplode?.(node.id, amount) ?? false,
   onSetRealDetailPartVisible: (node, partId, visible) => realDetailLoader?.setPartVisible?.(node.id, partId, visible) ?? false,
+  onSelectRealDetailPart: (node, partId) => realDetailLoader?.setSelectedPart?.(node.id, partId) ?? false,
+  onHoverRealDetailPart: (node, partId) => realDetailLoader?.setHoveredPart?.(node.id, partId) ?? false,
+  onFocusRealDetailPart: (node, partId) => focusRealDetailPart(node, partId),
+  onGhostOtherRealDetailParts: (node, partId, enabled) => realDetailLoader?.setGhostOtherParts?.(node.id, partId, enabled) ?? false,
+  onShowOnlyRealDetailPart: (node, partId, enabled) => realDetailLoader?.setOnlyPartVisible?.(node.id, partId, enabled) ?? false,
+  getRealDetailPartStats: (node, partId) => realDetailLoader?.getPartStats?.(node.id, partId) ?? null,
   getReferenceAnchor: anatomyReferenceAnchor,
 })
 renderUiAndModel()
