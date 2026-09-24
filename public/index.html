@@ -65,6 +65,7 @@
             <button id="tabTimeline" type="button" role="tab" aria-selected="false" aria-controls="paneTimeline" data-control-tab="timeline" data-workspace-tab-label="timeline">Trình bày</button>
             <button id="tabLearning" type="button" role="tab" aria-selected="false" aria-controls="paneLearning" data-control-tab="learning" data-workspace-tab-label="learning">Bài học</button>
             <button id="tabSection" type="button" role="tab" aria-selected="false" aria-controls="paneSection" data-control-tab="section" data-workspace-tab-label="section">Mặt cắt</button>
+            <button id="tabHelp" type="button" role="tab" aria-selected="false" aria-controls="paneHelp" data-control-tab="help" data-workspace-tab-label="help">Hướng dẫn</button>
           </div>
         </div>
 
@@ -309,6 +310,45 @@
               <button id="sectionCapBtn" type="button" aria-pressed="true" data-i18n="section.capOn">Nắp trực quan: Bật</button>
             </div>
           </div>
+        </section>
+
+        <section id="paneHelp" class="control-pane help-pane" role="tabpanel" aria-labelledby="tabHelp" data-control-pane="help" tabindex="0" hidden>
+          <div class="pane-heading">
+            <span class="panel-kicker" data-workspace-label="helpKicker">HƯỚNG DẪN</span>
+            <h2 data-workspace-label="helpTitle">Bắt đầu nhanh với Rocket Anatomy Lab</h2>
+            <p data-workspace-label="helpIntro">Đi theo 5 bước dưới đây để chọn cụm, quan sát, tách mô hình, dùng bài học và khám phá giải phẫu NASA.</p>
+          </div>
+          <ol class="help-steps">
+            <li class="help-card">
+              <strong data-workspace-label="helpStep1Title">1. Xoay, thu phóng và chọn</strong>
+              <p data-workspace-label="helpStep1Body">Kéo trên mô hình để xoay, lăn chuột hoặc chụm hai ngón để thu phóng. Bấm trực tiếp lên tên lửa hoặc chọn một cụm trong tab Đối tượng.</p>
+            </li>
+            <li class="help-card">
+              <strong data-workspace-label="helpStep2Title">2. Ẩn, hiện và cô lập</strong>
+              <p data-workspace-label="helpStep2Body">Trong tab Đối tượng, dùng ô chọn để ẩn/hiện từng cụm; dùng Cô lập để chỉ giữ cụm đang học và Hiện tất cả để khôi phục.</p>
+            </li>
+            <li class="help-card">
+              <strong data-workspace-label="helpStep3Title">3. Đổi chế độ quan sát</strong>
+              <p data-workspace-label="helpStep3Body">Tab Góc nhìn có Bình thường, Bóng mờ và X-quang, cùng thanh Tách cụm. Bình thường giữ các cụm còn lại hoàn toàn đục.</p>
+            </li>
+            <li class="help-card">
+              <strong data-workspace-label="helpStep4Title">4. Học theo trình tự</strong>
+              <p data-workspace-label="helpStep4Body">Tab Trình bày cho phép tháo/lắp theo bước; tab Bài học có 5 bài semantic, camera focus, chú thích và liên kết sâu có thể chia sẻ.</p>
+            </li>
+            <li class="help-card">
+              <strong data-workspace-label="helpStep5Title">5. Mặt cắt và giải phẫu NASA</strong>
+              <p data-workspace-label="helpStep5Body">Dùng tab Mặt cắt để quan sát bên trong; trong Đối tượng → Giải phẫu NASA, mở cây tham chiếu nhiều cấp và nguồn bằng chứng.</p>
+            </li>
+          </ol>
+          <div class="help-card help-tip">
+            <strong data-workspace-label="helpKeyboardTitle">Bàn phím</strong>
+            <p data-workspace-label="helpKeyboardBody">Khi focus ở hàng tab, dùng ←/→ để chuyển tab, Home/End để về đầu/cuối. Tab tiếp tục đi vào nội dung panel đang mở.</p>
+          </div>
+          <div class="help-card help-scope">
+            <strong data-workspace-label="helpEvidenceTitle">Phạm vi giáo dục</strong>
+            <p data-workspace-label="helpEvidenceBody">Các cụm là vùng hình học phục vụ học tập; không phải ranh giới tầng lịch sử hay hướng dẫn lắp ráp ngoài đời thực.</p>
+          </div>
+          <a id="helpDocsLink" class="help-docs-link" href="https://github.com/xuan2261/Rocket-Anatomy-Lab/blob/main/docs/USER_GUIDE.md" target="_blank" rel="noreferrer" data-workspace-label="helpDocsLink">Mở hướng dẫn đầy đủ trên GitHub ↗</a>
         </section>
       </aside>
     </main>
