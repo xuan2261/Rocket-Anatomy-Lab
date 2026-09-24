@@ -24,7 +24,7 @@
     "test:e2e": "playwright test --grep-invert @visual",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:report": "playwright show-report",
-    "verify:ci": "npm run build && npm run fetch:source && npm run verify:phase7 && npm run qualify:anatomy && npm run check:localization",
+    "verify:ci": "npm run build && npm run fetch:source && npm run verify:phase13 && npm run check:localization",
     "check:localization": "node scripts/check-i18n-ui.mjs",
     "test:all": "npm run verify:ci && npm run test:e2e && npm run test:visual",
     "qualify:learning": "node --test tests/learning.test.mjs tests/phase6-contract.test.mjs",
@@ -37,7 +37,9 @@
     "verify:phase7": "npm run verify:phase6 && npm run qualify:quality",
     "test:usability": "playwright test e2e/usability.spec.mjs",
     "qualify:anatomy": "node --test tests/anatomy.test.mjs tests/phase12-contract.test.mjs",
-    "verify:phase12": "npm run verify:phase7 && npm run qualify:anatomy"
+    "verify:phase12": "npm run verify:phase7 && npm run qualify:anatomy",
+    "qualify:anatomy-navigation": "node --test tests/anatomy-navigation.test.mjs tests/phase13-contract.test.mjs",
+    "verify:phase13": "npm run verify:phase12 && npm run qualify:anatomy-navigation"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
