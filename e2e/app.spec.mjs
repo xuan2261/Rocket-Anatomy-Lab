@@ -51,6 +51,8 @@ test.describe('Rocket Anatomy Lab — luồng chính', () => {
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
     await expect(page.locator('[data-theme-value="dark"]')).toHaveAttribute('aria-pressed', 'true')
     await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#0a0f16')
+    await expect(page.locator('#viewport')).toHaveAttribute('data-viewer-theme', 'dark')
+    await expect(page.locator('#viewport')).toHaveAttribute('data-scene-background', '#0b111a')
 
     await page.reload()
     await waitForRealAsset(page)
@@ -60,6 +62,8 @@ test.describe('Rocket Anatomy Lab — luồng chính', () => {
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
     await expect(page.locator('[data-theme-value="light"]')).toHaveAttribute('aria-pressed', 'true')
     await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#f6f8fb')
+    await expect(page.locator('#viewport')).toHaveAttribute('data-viewer-theme', 'light')
+    await expect(page.locator('#viewport')).toHaveAttribute('data-scene-background', '#d9e5ef')
   })
 
   test('chọn cụm, tách cụm và điều khiển timeline trong Control Center', async ({ page }) => {
@@ -69,6 +73,8 @@ test.describe('Rocket Anatomy Lab — luồng chính', () => {
     await openControlPanel(page, 'objects')
     await page.locator('#tree').getByRole('button', { name: /Cụm mũi/ }).click()
     await expect(page.locator('#inspectorTitle')).toContainText('Cụm mũi')
+    await expect(page.locator('#tree [role="treeitem"][aria-selected="true"]')).toHaveCount(1)
+    await expect(page.locator('#viewport')).toHaveAttribute('data-selected-assembly', /.+/)
 
     await openControlPanel(page, 'timeline')
     await page.locator('#timelineNextBtn').click()
