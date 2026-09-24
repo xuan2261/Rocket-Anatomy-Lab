@@ -37,33 +37,47 @@ async function selectFromTree(page, assemblyId) {
 
 async function pickFocusedAssemblyFromViewport(page, assemblyId, otherAssemblyId) {
   await openPanel(page, 'learning')
+
+  const annotationToggle = page.locator('#learningAnnotationsBtn')
+  if (await annotationToggle.getAttribute('aria-pressed') !== 'true') await annotationToggle.click()
+  await expect(annotationToggle).toHaveAttribute('aria-pressed', 'true')
+
   await page.locator('#learningFocusBtn').click()
   await page.evaluate(() => new Promise(resolve => {
     requestAnimationFrame(() => requestAnimationFrame(resolve))
   }))
 
+  const marker = page.locator(`[data-annotation-id="${assemblyId}"]`)
+  await expect(marker).toBeVisible()
+
   await openPanel(page, 'objects')
   await selectFromTree(page, otherAssemblyId)
 
-  // Keep the target as the only visible assembly so the test validates the
-  // real canvas/raycaster path without being nondeterministic when another
-  // assembly occludes it from the current camera direction.
+  // Keep the target as the only visible assembly so a click through the
+  // projected lesson anchor exercises the real Three.js raycaster without
+  // another assembly winning the nearest-intersection test.
   for (const id of ASSEMBLIES) {
     if (id === assemblyId) continue
     const checkbox = page.locator(`#tree [data-assembly-id="${id}"] input[type="checkbox"]`)
     if (await checkbox.isChecked()) await checkbox.uncheck()
   }
 
+  await expect(marker).toBeVisible()
+  await marker.evaluate(element => { element.style.pointerEvents = 'none' })
+
   const canvas = page.locator('#viewport')
-  const box = await canvas.boundingBox()
-  expect(box).not.toBeNull()
+  const [canvasBox, markerBox] = await Promise.all([canvas.boundingBox(), marker.boundingBox()])
+  expect(canvasBox).not.toBeNull()
+  expect(markerBox).not.toBeNull()
 
-  const fractions = [0.5, 0.4, 0.6, 0.3, 0.7, 0.2, 0.8, 0.1, 0.9, 0.05, 0.95]
+  const centerX = markerBox.x + markerBox.width / 2
+  const centerY = markerBox.y + markerBox.height / 2
+  const offsets = [0, -12, 12, -24, 24, -36, 36, -52, 52]
 
-  for (const fy of fractions) {
-    for (const fx of fractions) {
-      const x = box.x + box.width * fx
-      const y = box.y + box.height * fy
+  for (const dy of offsets) {
+    for (const dx of offsets) {
+      const x = Math.min(canvasBox.x + canvasBox.width - 2, Math.max(canvasBox.x + 2, centerX + dx))
+      const y = Math.min(canvasBox.y + canvasBox.height - 2, Math.max(canvasBox.y + 2, centerY + dy))
       await page.mouse.click(x, y)
       if (await canvas.getAttribute('data-selected-assembly') === assemblyId) {
         await page.locator('#showAllBtn').click()
