@@ -5,7 +5,7 @@ on:
     branches: [chore/phase7-quality-hardening]
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: visual-baseline-${{ github.ref }}
@@ -27,6 +27,19 @@ jobs:
       - run: npm run verify:ci
       - name: Generate CI-native visual baselines
         run: npm run test:visual:update
+      - name: Commit CI-native baselines
+        shell: bash
+        run: |
+          git add e2e/visual.spec.mjs-snapshots/
+          if git diff --cached --quiet; then
+            echo "Visual baselines already match CI output."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "test(visual): add CI-native baselines"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
       - name: Upload visual baselines
         uses: actions/upload-artifact@v7
         with:
