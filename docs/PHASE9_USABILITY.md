@@ -60,6 +60,10 @@ Mỗi project Playwright đính kèm artifact `phase9-usability-metrics` chứa:
 
 Metric khoảng cách chỉ dùng để so sánh regression giữa các revision; nó không thay thế usability study thực tế.
 
+## Visual baseline reconciliation
+
+Sau khi tăng target của thiết bị coarse-pointer lên 48 px, visual regression cho thấy chỉ 4 golden mobile (VI/EN × Light/Dark) thay đổi; 4 golden desktop vẫn giữ nguyên. Baseline mobile được tái sinh trên cùng Ubuntu 24.04 + Chromium CI environment và workflow tạm thời đã tự xóa sau khi kiểm tra đúng tập file thay đổi.
+
 ## Manual follow-up
 
 Sau automated gate, bước đánh giá con người nên dùng cùng 5 task, quan sát:
