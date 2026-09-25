@@ -5,20 +5,19 @@ import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { chromium, devices, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import { prepareAcceptance } from './lib/acceptance-config.mjs'
 
 // Read-only acceptance of the deployed app. No local server, request mocks,
 // application-state injection, baseline updates, or release operation.
-const REVISION = '38292a53ce08cfaa865a530caf523b15b5419e5f'
-const BASE = 'https://xuan2261.github.io/Rocket-Anatomy-Lab/'
-const OUTPUT = path.resolve('docs/acceptance/38292a5-production')
+const { revision: REVISION, base: BASE, output: OUTPUT, harnessRevision } = prepareAcceptance()
 const ASSEMBLIES = ['base-assembly', 'lower-body-assembly', 'center-body-assembly', 'upper-body-assembly', 'nose-stack-assembly']
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex')
 const git = (...args) => execFileSync('git', args, { maxBuffer: 16 * 1024 * 1024 })
 const pauseFrames = page => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
-fs.mkdirSync(OUTPUT, { recursive: true })
+console.log(`Acceptance output: ${OUTPUT}`)
 const report = {
   expectedApplicationRevision: REVISION, target: BASE, startedAt: new Date().toISOString(),
-  harnessRevision: git('rev-parse', 'HEAD').toString().trim(),
+  harnessRevision, outputMode: 'artifact-only',
   runUrl: process.env.GITHUB_RUN_ID ? `https://github.com/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}` : null,
   environment: { platform: os.platform(), release: os.release(), node: process.version },
   fingerprints: [], cases: [], infrastructureErrors: [],
@@ -27,8 +26,6 @@ const report = {
 }
 
 function sourceFiles() {
-  const drift = git('diff', REVISION, '--', 'public', 'src', 'package.json', 'tsconfig.json').toString()
-  if (drift.trim()) throw new Error('Application source differs from the acceptance revision')
   const tracked = git('ls-tree', '-r', '--name-only', REVISION, '--', 'public/').toString().trim().split('\n')
     .filter(name => /\.(mjs|html|css|json)$/.test(name))
     .map(name => ({ name, bytes: git('show', `${REVISION}:${name}`) }))
@@ -87,7 +84,11 @@ async function runCase(profile, language, suffix, fn) {
   page.on('requestfailed', request => result.requestsFailed.push({ url: request.url(), failure: request.failure()?.errorText }))
   page.on('response', response => {
     const expected = expectedByUrl.get(response.url())
-    if (!expected || !response.ok()) return
+    if (!expected) return
+    if (!response.ok()) {
+      result.errors.push(`HTTP ${response.status()}: ${response.url()}`)
+      return
+    }
     bodies.push(response.body().then(bytes => {
       const actual = sha256(bytes)
       result.browserFiles.push({ url: response.url(), sha256: actual, matches: actual === expected })
@@ -112,6 +113,7 @@ async function runCase(profile, language, suffix, fn) {
     await pauseFrames(page)
     await Promise.all(bodies)
     expect(result.errors, `${id}: runtime/source errors`).toEqual([])
+    expect(result.requestsFailed, `${id}: failed network requests`).toEqual([])
     result.status = 'PASS'
   } catch (error) {
     result.status = 'FAIL'

@@ -1,17 +1,20 @@
 name: Production browser acceptance
+run-name: Production browser acceptance - main - ${{ github.run_number }}
 
 on:
-  push:
-    branches: [qa/production-acceptance-38292a5]
-    paths:
-      - scripts/accept-production.mjs
-      - .github/workflows/production-acceptance.yml
+  workflow_dispatch:
+    inputs:
+      expected_revision:
+        description: 'Full 40-character application commit SHA; leave blank to verify this main checkout'
+        required: false
+        type: string
+        default: ''
 
 permissions:
   contents: read
 
 concurrency:
-  group: production-acceptance-38292a5
+  group: production-browser-acceptance-main
   cancel-in-progress: false
 
 jobs:
@@ -19,37 +22,52 @@ jobs:
     if: github.repository == 'xuan2261/Rocket-Anatomy-Lab'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    permissions:
-      contents: write
+    env:
+      ACCEPTANCE_REVISION: ${{ inputs.expected_revision }}
+      ACCEPTANCE_OUTPUT_DIR: ${{ runner.temp }}/production-acceptance-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
+      - name: Require a manual run from main
+        shell: bash
+        run: |
+          test "$GITHUB_EVENT_NAME" = workflow_dispatch
+          test "$GITHUB_REF" = refs/heads/main
       - uses: actions/checkout@v7
+        id: checkout
         with:
+          ref: ${{ github.sha }}
           fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version: 22
       - run: npm install --no-fund --no-audit --ignore-scripts
+      - name: Verify acceptance safeguards
+        run: node --test tests/production-acceptance.test.mjs
       - run: npx playwright install --with-deps chromium
-      - name: Rebuild the unchanged pinned domain and qualify the actual NASA GLB
+      - name: Build the checked-out domain and qualify the pinned NASA GLB
         run: npm run build && npm run fetch:source && npm run qualify:real
-      - name: Test the live Pages site, not a local server
+      - name: Test the live Pages site without a local server or mocked assets
         run: node scripts/accept-production.mjs
-      - name: Upload acceptance evidence, including any failure traces
-        if: ${{ always() && !cancelled() }}
-        uses: actions/upload-artifact@v7
-        with:
-          name: production-acceptance-38292a5
-          path: docs/acceptance/38292a5-production/
-          if-no-files-found: warn
-          retention-days: 30
-      - name: Preserve public-site report and screenshots on the QA branch only
-        if: ${{ always() && !cancelled() }}
+      - name: Publish the result summary without changing the repository
+        if: ${{ always() }}
         shell: bash
         run: |
-          test -d docs/acceptance/38292a5-production || exit 0
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          find docs/acceptance/38292a5-production -maxdepth 1 -type f \( -name '*.md' -o -name '*.json' -o -name '*.png' \) -print0 | xargs -0 -r git add --
-          git diff --cached --quiet && exit 0
-          git commit -m "test(acceptance): preserve live Pages evidence [skip ci]"
-          git push origin HEAD:refs/heads/qa/production-acceptance-38292a5
+          if test -f "$ACCEPTANCE_OUTPUT_DIR/README.md"; then
+            sed '/^## Unmasked screenshots/,$d' "$ACCEPTANCE_OUTPUT_DIR/README.md" >> "$GITHUB_STEP_SUMMARY"
+            printf '%s\n' 'Download this run’s artifact for the unmasked screenshots and machine-readable results.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            mkdir -p "$ACCEPTANCE_OUTPUT_DIR"
+            printf '%s\n' '{"status":"NOT_COMPLETED","reason":"No completed browser report; inspect the failed or cancelled workflow steps."}' > "$ACCEPTANCE_OUTPUT_DIR/workflow-status.json"
+            printf '%s\n' '## Production acceptance: NOT COMPLETED' 'No completed browser report. A prerequisite failed or the run was cancelled; this is not a PASS.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Verify tracked files remain unchanged
+        if: ${{ always() && steps.checkout.outcome == 'success' }}
+        run: git diff --exit-code HEAD -- .
+      - name: Upload run evidence and any failure traces
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: production-acceptance-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.ACCEPTANCE_OUTPUT_DIR }}/
+          if-no-files-found: warn
+          retention-days: 30

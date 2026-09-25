@@ -1,0 +1,22 @@
+name: Verify manual acceptance once
+
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/verify-manual-acceptance-once.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  dispatch:
+    if: github.repository == 'xuan2261/Rocket-Anatomy-Lab' && github.ref == 'refs/heads/main' && github.event.head_commit.message == 'ci(acceptance): make main verification manual and artifact-only' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+      - name: Invoke the read-only manual workflow once
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run production-acceptance.yml --repo xuan2261/Rocket-Anatomy-Lab --ref main

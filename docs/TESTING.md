@@ -61,3 +61,29 @@ Golden files nằm tại `e2e/visual.spec.mjs-snapshots/`:
 Golden snapshots được sinh trên Ubuntu 24.04/Chromium trong GitHub Actions, không sinh từ máy local. Visual CI lane cũng chạy trên Ubuntu 24.04 để giảm drift môi trường.
 
 WebGL canvas và annotation overlay được mask; functional E2E tiếp tục kiểm renderer thật. Visual regression tập trung vào layout, text, control states và responsive UI.
+
+## Nghiệm thu production thủ công
+
+Mở **Actions → Production browser acceptance → Run workflow**, chọn **main**.
+[Workflow](../.github/workflows/production-acceptance.yml) là điểm chạy chính;
+[script nghiệm thu](../scripts/accept-production.mjs) sở hữu ma trận kiểm tra.
+Không cần mở phiên trên điện thoại hoặc máy tính cá nhân để chạy bộ tự động này.
+
+Để trống `expected_revision` khi kiểm bản main vừa triển khai. Chỉ nhập một commit
+SHA đầy đủ khi cần đối chiếu mốc cũ; mốc đó phải là ancestor và phần source ứng dụng
+phải còn tương đương với checkout hiện tại. Chạy sau khi Pages deploy hoàn tất.
+Nếu tài nguyên live khác mốc kiểm, kết quả bị chặn thay vì tự chấp nhận baseline mới.
+
+Báo cáo và ảnh nằm trong **Summary / Artifacts** của chính workflow run, không nằm
+trong branch QA mới. Mỗi run/attempt có artifact riêng, giữ 30 ngày. Bằng chứng cũ
+trong `docs/acceptance/` được giữ nguyên; không ghi đè nó khi kiểm lại production.
+Workflow nghiệm thu không commit, push, tạo branch, triển khai Pages hoặc phát hành.
+
+Kết quả PASS chỉ áp dụng cho bộ tự động được ghi trong artifact. Mobile là giả lập
+Chromium; nghiệm thu thiết bị vật lý, pinch, GPU/driver và công nghệ hỗ trợ vẫn là
+các mục riêng chưa xác minh. Không suy diễn `axe` không có violations thành việc
+đã đạt toàn bộ accessibility, đặc biệt khi còn mục `incomplete`.
+
+Các điều kiện từ chối và bảo vệ đầu ra nằm trong
+[`tests/production-acceptance.test.mjs`](../tests/production-acceptance.test.mjs).
+Cách kích hoạt được đối chiếu với [hướng dẫn GitHub về workflow thủ công](https://docs.github.com/actions/managing-workflow-runs/manually-running-a-workflow).
