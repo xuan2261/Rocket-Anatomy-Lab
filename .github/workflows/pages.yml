@@ -91,7 +91,8 @@ jobs:
           name: github-pages-${{ needs.gate.outputs.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/tested-site/artifact.tar
           if-no-files-found: error
-          compression-level: 0
+          # Match the official Pages uploader; the inner tar stays byte-identical.
+          compression-level: 6
           retention-days: 14
 
   deploy:
