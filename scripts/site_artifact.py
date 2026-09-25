@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pack, verify, test and promote the same Pages tar. Python standard library only.
+"""Pack, verify, test and promote the same Pages tar. Python standard library and GNU tar.
 
 The archive is data, never an executable or a workflow. No generic extractall,
 network credentials, source mutation, download fallback, or rebuild is used.
@@ -12,6 +12,7 @@ import pathlib
 import re
 import shutil
 import stat
+import subprocess
 import sys
 import tarfile
 import time
@@ -81,6 +82,7 @@ def inventory(root):
         info = item.lstat()
         require(not stat.S_ISLNK(info.st_mode), 'Links are not allowed in a site artifact')
         if stat.S_ISDIR(info.st_mode):
+            safe_name(item.relative_to(root).as_posix())
             continue
         require(stat.S_ISREG(info.st_mode) and info.st_nlink == 1, 'Only independent regular files are allowed')
         name = safe_name(item.relative_to(root).as_posix())
@@ -111,27 +113,48 @@ def validate_manifest(manifest, identity):
                 'File/directory path collision')
 
 
+def archive_directories(files):
+    # Only the root and parents of manifested files may occur as directory entries.
+    return {''} | {str(parent) for entry in files
+                   for parent in pathlib.PurePosixPath(entry['path']).parents if str(parent) != '.'}
+
+
 def inspect_tar(filename, manifest):
     filename = pathlib.Path(filename)
     require(filename.is_file() and not filename.is_symlink() and filename.stat().st_size == manifest['bytes'], 'Tar size mismatch')
     data = filename.read_bytes()
     require(digest(data) == manifest['sha256'], 'Tar checksum mismatch')
     extracted = {}
+    directories = set()
+    expected_directories = archive_directories(manifest['files'])
+    seen = set()
     with tarfile.open(fileobj=io.BytesIO(data), mode='r:') as archive:
         for member in archive:
-            # Pages requires the same leading ./ convention as its official
-            # archive action. Remove exactly that prefix, then apply path safety.
-            require(member.name.startswith('./'), 'Pages archive paths must start with ./')
-            name = safe_name(member.name[2:])
-            require(member.type in (tarfile.REGTYPE, tarfile.AREGTYPE) and not member.pax_headers,
-                    'Archive must contain only regular USTAR files')
-            require(name not in extracted and len(extracted) < MAX_FILES, 'Duplicate or excessive archive members')
+            require(member.type in (tarfile.REGTYPE, tarfile.AREGTYPE, tarfile.DIRTYPE)
+                    and not member.pax_headers and not member.linkname,
+                    'Archive must contain only regular files and directories without extension metadata')
+            # tarfile presents GNU tar's ./ root entry as '.', and strips the
+            # trailing slash from directories. All other paths keep one ./ prefix.
+            if member.isdir() and member.name in ('.', './'):
+                name = ''
+            else:
+                require(member.name.startswith('./'), 'Pages archive paths must start with ./')
+                name = safe_name(member.name[2:])
+            require(name not in seen and len(seen) < MAX_FILES + len(expected_directories),
+                    'Duplicate or excessive archive members')
+            seen.add(name)
             require(0 <= member.size <= MAX_BYTES and member.offset_data + member.size <= len(data), 'Invalid member bounds')
+            if member.isdir():
+                require(member.size == 0 and name in expected_directories,
+                        'Unexpected directory or directory payload')
+                directories.add(name)
+                continue
             stream = archive.extractfile(member)
             require(stream is not None, 'Missing file payload')
             body = stream.read(MAX_BYTES + 1)
             require(len(body) == member.size, 'Truncated file payload')
             extracted[name] = body
+    require(directories == expected_directories, 'Missing Pages archive directory hierarchy')
     actual = [{'path': name, 'size': len(body), 'sha256': digest(body)} for name, body in sorted(extracted.items())]
     require(actual == manifest['files'], 'Archive contents differ from the complete manifest')
     return extracted
@@ -166,14 +189,26 @@ def pack(site, destination, identity):
     validate_identity(identity)
     site = pathlib.Path(site)
     files = inventory(site)
+    require(not pathlib.Path(destination).resolve().is_relative_to(site.resolve()),
+            'Candidate output must be outside the source tree')
+    directories = {''} | {item.relative_to(site).as_posix() for item in site.rglob('*') if item.is_dir()}
+    require(directories == archive_directories(files), 'Unreferenced empty source directory')
     dest = fresh_directory(destination)
     try:
-        with tarfile.open(dest / 'artifact.tar', mode='w', format=tarfile.USTAR_FORMAT) as archive:
-            for entry in files:
-                member = tarfile.TarInfo('./' + entry['path'])
-                member.size = entry['size']; member.mode = 0o644; member.mtime = 0
-                with (site / entry['path']).open('rb') as stream:
-                    archive.addfile(member, stream)
+        # Match the official Linux Pages archiver, including root/directory
+        # entries and source metadata. Never recreate the tar during promotion.
+        # Prevalidated input rejects links and hidden content except .nojekyll.
+        env = {key: value for key, value in os.environ.items()
+               if key not in ('TAR_OPTIONS', 'POSIXLY_CORRECT')}
+        env['LC_ALL'] = 'C'
+        version = subprocess.run(['tar', '--version'], check=True, capture_output=True,
+                                 text=True, timeout=10, env=env)
+        require(version.stdout.startswith('tar (GNU tar)'), 'GNU tar is required; no packaging fallback')
+        subprocess.run(['tar', '--format=gnu', '--dereference', '--hard-dereference',
+                        '--directory', str(site.resolve()), '-cf', str((dest / 'artifact.tar').resolve()),
+                        '--exclude=.git', '--exclude=.github', '.'],
+                       check=True, capture_output=True, text=True, timeout=120, env=env)
+        require(inventory(site) == files, 'Source changed while packaging')
         payload = (dest / 'artifact.tar').read_bytes()
         manifest = {'schema': 1, **identity, 'sha256': digest(payload), 'bytes': len(payload), 'files': files}
         write_json(dest / 'manifest.json', manifest)

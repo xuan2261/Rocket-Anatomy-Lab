@@ -57,10 +57,19 @@ nguyên byte sang một transport artifact tại lượt Pages. **Artifact ID v�
 có thể khác; SHA-256 của tar phải giống hệt.** Manifest và biên nhận giữ liên hệ với
 artifact nguồn, không được hiểu là một chữ ký/attestation supply-chain độc lập.
 
-Đường dẫn thành viên tar dùng đúng một tiền tố `./`, cùng quy ước với action
-đóng gói Pages chính thức. Một tar giải nén được bằng GNU tar chưa đủ để chứng minh
-tương thích Pages; xem [issue upstream về tiền tố đường dẫn](https://github.com/actions/deploy-pages/issues/203).
-Validator loại bỏ đúng tiền tố này rồi vẫn kiểm traversal, link, trùng tên và checksum.
+Candidate được đóng bằng GNU tar ngay trong CI, theo cơ chế Linux của
+[uploader Pages chính thức](https://github.com/actions/upload-pages-artifact/blob/v5/action.yml).
+Giữ entry gốc, các thư mục cha và metadata nguồn thay vì tự dựng archive chỉ có
+file bằng Python USTAR. Một archive giải nén được local chưa chứng minh tương thích
+backend Pages; việc triển khai và đối chiếu live vẫn là gate bắt buộc.
+
+Validator chỉ nhận cây thư mục cần cho manifest, đồng thời giữ kiểm traversal,
+link, trùng tên và checksum. Không có fallback đóng gói khi thiếu GNU tar.
+[Test archive](../tests/site_artifact_test.py) đối chiếu với lệnh uploader trên cùng
+cây nguồn và bảo vệ các trường hợp bị từ chối. Metadata có thể khác giữa các runner;
+cam kết là chuyển nguyên candidate đã kiểm, không phải mọi lần build độc lập đều
+có cùng tar hash. Bất kỳ thay đổi cách đóng gói nào cũng cần candidate và biên nhận
+kiểm thử mới; không được đóng lại tar tại bước Pages.
 
 Artifact và biên nhận phải thuộc cùng CI attempt. Khi cần chạy lại, dùng **Re-run all
 jobs** để tạo một tập bằng chứng đầy đủ; không ghép candidate của attempt cũ với

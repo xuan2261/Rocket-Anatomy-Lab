@@ -38,7 +38,7 @@ class SiteArtifactTests(unittest.TestCase):
     def pack(self):
         return a.pack(self.site, self.bundle, self.identity)
 
-    def test_pack_is_deterministic_and_gnu_tar_can_read_exact_files(self):
+    def test_pack_is_repeatable_for_an_unchanged_tree_and_gnu_tar_can_read_exact_files(self):
         first = self.pack()
         second = self.root / 'second'
         a.pack(self.site, second, self.identity)
@@ -53,11 +53,13 @@ class SiteArtifactTests(unittest.TestCase):
         manifest = self.pack()
         with tarfile.open(self.bundle / 'artifact.tar') as archive:
             members = archive.getmembers()
-            self.assertTrue(all(member.name.startswith('./') for member in members))
-            self.assertEqual([member.name[2:] for member in members], [row['path'] for row in manifest['files']])
-        # Pages rejects archives with equivalent unprefixed names. The validator
-        # must catch that compatibility defect before tests and deployment.
-        for prefix in ['', '././']:
+            self.assertEqual({member.name for member in members if member.isdir()}, {'.', './core', './assets'})
+            regular = [member for member in members if member.isfile()]
+            self.assertTrue(all(member.name.startswith('./') for member in regular))
+            self.assertEqual(sorted(member.name[2:] for member in regular), [row['path'] for row in manifest['files']])
+        # Keep a single prefix and the complete directory hierarchy. A file-only
+        # Python archive must not regress the GNU Pages packaging contract.
+        for prefix in ['', '././', './']:
             buffer = io.BytesIO()
             with tarfile.open(fileobj=buffer, mode='w', format=tarfile.USTAR_FORMAT) as archive:
                 for name, body in sorted(self.files.items()):
@@ -227,6 +229,110 @@ class SiteArtifactTests(unittest.TestCase):
                       {**original, 'status': 'FAIL'}, {**original, 'runAttempt': '2'}]:
             (tested / 'verification.json').write_text(json.dumps(value))
             with self.assertRaises(ValueError): a.verify_bundle(tested, self.identity, tested=True)
+
+
+    def test_candidate_matches_the_official_linux_tar_command_on_the_same_tree(self):
+        self.pack()
+        reference = self.root / 'official.tar'
+        env = {key: value for key, value in a.os.environ.items()
+               if key not in ('TAR_OPTIONS', 'POSIXLY_CORRECT')}
+        env['LC_ALL'] = 'C'
+        subprocess.run(['tar', '--dereference', '--hard-dereference',
+                        '--directory', str(self.site), '-cf', str(reference),
+                        '--exclude=.git', '--exclude=.github', '.'],
+                       check=True, capture_output=True, timeout=10, env=env)
+        payload = (self.bundle / 'artifact.tar').read_bytes()
+        self.assertEqual(payload, reference.read_bytes())
+        self.assertEqual(payload[257:265], tarfile.GNU_MAGIC)
+        with tarfile.open(self.bundle / 'artifact.tar') as archive:
+            self.assertEqual(archive.getmembers()[0].name, '.')
+            self.assertTrue(archive.getmembers()[0].isdir())
+            info = archive.getmember('./index.html')
+            self.assertEqual(info.mtime, int((self.site / 'index.html').stat().st_mtime))
+            self.assertEqual(info.uid, (self.site / 'index.html').stat().st_uid)
+
+    def test_tar_environment_cannot_change_the_candidate_contents_or_format(self):
+        with mock.patch.dict(a.os.environ, {'TAR_OPTIONS': '--exclude=bootstrap.mjs', 'POSIXLY_CORRECT': '1'}):
+            manifest = self.pack()
+        self.assertEqual(a.inspect_tar(self.bundle / 'artifact.tar', manifest), self.files)
+        self.assertEqual((self.bundle / 'artifact.tar').read_bytes()[257:265], tarfile.GNU_MAGIC)
+
+    def test_missing_or_non_gnu_tar_fails_closed_without_a_python_fallback(self):
+        for result in [FileNotFoundError('tar'), subprocess.CompletedProcess([], 0, 'bsdtar 3.7', '')]:
+            with self.subTest(result=result):
+                with mock.patch('subprocess.run', side_effect=result if isinstance(result, Exception) else None,
+                                return_value=result if not isinstance(result, Exception) else None):
+                    with self.assertRaises((ValueError, FileNotFoundError)):
+                        self.pack()
+                self.assertFalse(self.bundle.exists())
+
+    def test_gnu_tar_failure_removes_only_the_new_candidate_directory(self):
+        real_run = subprocess.run
+        def failing_run(args, **kwargs):
+            if '--version' in args:
+                return real_run(args, **kwargs)
+            (self.bundle / 'artifact.tar').write_bytes(b'partial')
+            raise subprocess.CalledProcessError(2, args, stderr='controlled failure')
+        with mock.patch('subprocess.run', side_effect=failing_run):
+            with self.assertRaises(subprocess.CalledProcessError):
+                self.pack()
+        self.assertFalse(self.bundle.exists())
+        self.assertEqual((self.site / 'index.html').read_bytes(), self.files['index.html'])
+
+    def test_candidate_destination_cannot_be_inside_the_source_tree(self):
+        nested = self.site / 'candidate'
+        with self.assertRaisesRegex(ValueError, 'outside'):
+            a.pack(self.site, nested, self.identity)
+        self.assertFalse(nested.exists())
+
+    def test_directory_entries_are_safe_unique_and_bound_to_manifest_parents(self):
+        manifest = self.pack()
+        original = (self.bundle / 'artifact.tar').read_bytes()
+        for name in ['.', './core', './extra', './../escape', '././alias', './.git']:
+            buffer = io.BytesIO()
+            with tarfile.open(fileobj=buffer, mode='w', format=tarfile.GNU_FORMAT) as archive:
+                with tarfile.open(fileobj=io.BytesIO(original)) as old:
+                    for member in old:
+                        archive.addfile(member, old.extractfile(member))
+                member = tarfile.TarInfo(name); member.type = tarfile.DIRTYPE
+                archive.addfile(member)
+            payload = buffer.getvalue()
+            (self.bundle / 'artifact.tar').write_bytes(payload)
+            (self.bundle / 'manifest.json').write_text(json.dumps({
+                **manifest, 'sha256': a.digest(payload), 'bytes': len(payload)}))
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                a.restore(self.bundle, self.root / 'served', self.identity)
+            self.assertFalse((self.root / 'served').exists())
+
+    def test_pax_metadata_or_directory_payload_is_rejected_before_extraction(self):
+        manifest = self.pack()
+        original = (self.bundle / 'artifact.tar').read_bytes()
+        for variant in ['pax', 'directory-payload']:
+            buffer = io.BytesIO()
+            with tarfile.open(fileobj=buffer, mode='w', format=tarfile.PAX_FORMAT) as archive:
+                with tarfile.open(fileobj=io.BytesIO(original)) as old:
+                    for member in old:
+                        body = old.extractfile(member)
+                        if variant == 'pax' and member.isfile():
+                            member.pax_headers = {'comment': 'unexpected metadata'}
+                        if variant == 'directory-payload' and member.name == '.':
+                            member.size = 1; body = io.BytesIO(b'x')
+                        archive.addfile(member, body)
+            payload = buffer.getvalue()
+            (self.bundle / 'artifact.tar').write_bytes(payload)
+            (self.bundle / 'manifest.json').write_text(json.dumps({
+                **manifest, 'sha256': a.digest(payload), 'bytes': len(payload)}))
+            with self.subTest(variant=variant), self.assertRaises(ValueError):
+                a.restore(self.bundle, self.root / 'served', self.identity)
+            self.assertFalse((self.root / 'served').exists())
+
+    def test_hidden_or_unreferenced_empty_directories_cannot_enter_the_candidate(self):
+        for name in ['.github', '.private', 'empty']:
+            folder = self.site / name; folder.mkdir()
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                self.pack()
+            self.assertFalse(self.bundle.exists())
+            folder.rmdir()
 
 
 if __name__ == '__main__': unittest.main()
