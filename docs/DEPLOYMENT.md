@@ -57,6 +57,11 @@ nguyên byte sang một transport artifact tại lượt Pages. **Artifact ID v�
 có thể khác; SHA-256 của tar phải giống hệt.** Manifest và biên nhận giữ liên hệ với
 artifact nguồn, không được hiểu là một chữ ký/attestation supply-chain độc lập.
 
+Đường dẫn thành viên tar dùng đúng một tiền tố `./`, cùng quy ước với action
+đóng gói Pages chính thức. Một tar giải nén được bằng GNU tar chưa đủ để chứng minh
+tương thích Pages; xem [issue upstream về tiền tố đường dẫn](https://github.com/actions/deploy-pages/issues/203).
+Validator loại bỏ đúng tiền tố này rồi vẫn kiểm traversal, link, trùng tên và checksum.
+
 Artifact và biên nhận phải thuộc cùng CI attempt. Khi cần chạy lại, dùng **Re-run all
 jobs** để tạo một tập bằng chứng đầy đủ; không ghép candidate của attempt cũ với
 biên nhận mới. Nếu artifact đã hết hạn/xóa hoặc thiếu bằng chứng, chạy lại CI;

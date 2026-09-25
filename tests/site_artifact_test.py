@@ -49,6 +49,27 @@ class SiteArtifactTests(unittest.TestCase):
         a.verify_tree(dest, first)
         self.assertEqual((dest / '.nojekyll').read_bytes(), b'')
 
+    def test_pages_requires_exactly_one_dot_slash_archive_prefix(self):
+        manifest = self.pack()
+        with tarfile.open(self.bundle / 'artifact.tar') as archive:
+            members = archive.getmembers()
+            self.assertTrue(all(member.name.startswith('./') for member in members))
+            self.assertEqual([member.name[2:] for member in members], [row['path'] for row in manifest['files']])
+        # Pages rejects archives with equivalent unprefixed names. The validator
+        # must catch that compatibility defect before tests and deployment.
+        for prefix in ['', '././']:
+            buffer = io.BytesIO()
+            with tarfile.open(fileobj=buffer, mode='w', format=tarfile.USTAR_FORMAT) as archive:
+                for name, body in sorted(self.files.items()):
+                    member = tarfile.TarInfo(prefix + name)
+                    member.size = len(body)
+                    archive.addfile(member, io.BytesIO(body))
+            data = buffer.getvalue()
+            (self.bundle / 'artifact.tar').write_bytes(data)
+            (self.bundle / 'manifest.json').write_text(json.dumps({**manifest, 'sha256': a.digest(data), 'bytes': len(data)}))
+            with self.subTest(prefix=prefix), self.assertRaises(ValueError):
+                a.verify_bundle(self.bundle, self.identity)
+
     def test_restore_uses_a_new_tree_outside_source(self):
         manifest = self.pack()
         target = self.root / 'served'
@@ -104,9 +125,9 @@ class SiteArtifactTests(unittest.TestCase):
     def test_archive_rejects_escape_links_and_duplicate_members_even_with_matching_hash(self):
         manifest = self.pack()
         original = (self.bundle / 'artifact.tar').read_bytes()
-        for name, kind in [('../outside.txt', tarfile.REGTYPE), ('/absolute', tarfile.REGTYPE),
-                           ('safe/../escape', tarfile.REGTYPE), ('link', tarfile.SYMTYPE),
-                           ('hard', tarfile.LNKTYPE), ('index.html', tarfile.REGTYPE)]:
+        for name, kind in [('./../outside.txt', tarfile.REGTYPE), ('/absolute', tarfile.REGTYPE),
+                           ('./safe/../escape', tarfile.REGTYPE), ('./link', tarfile.SYMTYPE),
+                           ('./hard', tarfile.LNKTYPE), ('./index.html', tarfile.REGTYPE)]:
             buffer = io.BytesIO()
             with tarfile.open(fileobj=buffer, mode='w', format=tarfile.USTAR_FORMAT) as tar:
                 with tarfile.open(fileobj=io.BytesIO(original)) as old:

@@ -119,7 +119,10 @@ def inspect_tar(filename, manifest):
     extracted = {}
     with tarfile.open(fileobj=io.BytesIO(data), mode='r:') as archive:
         for member in archive:
-            name = safe_name(member.name)
+            # Pages requires the same leading ./ convention as its official
+            # archive action. Remove exactly that prefix, then apply path safety.
+            require(member.name.startswith('./'), 'Pages archive paths must start with ./')
+            name = safe_name(member.name[2:])
             require(member.type in (tarfile.REGTYPE, tarfile.AREGTYPE) and not member.pax_headers,
                     'Archive must contain only regular USTAR files')
             require(name not in extracted and len(extracted) < MAX_FILES, 'Duplicate or excessive archive members')
@@ -167,7 +170,7 @@ def pack(site, destination, identity):
     try:
         with tarfile.open(dest / 'artifact.tar', mode='w', format=tarfile.USTAR_FORMAT) as archive:
             for entry in files:
-                member = tarfile.TarInfo(entry['path'])
+                member = tarfile.TarInfo('./' + entry['path'])
                 member.size = entry['size']; member.mode = 0o644; member.mtime = 0
                 with (site / entry['path']).open('rb') as stream:
                     archive.addfile(member, stream)
