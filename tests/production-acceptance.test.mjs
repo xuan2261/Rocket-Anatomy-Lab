@@ -138,3 +138,14 @@ test('GitHub execution requires the intended repository, manual event and exact 
   }
   assert.equal(prepareAcceptance({ cwd: f.cwd, env }).revision, f.revision)
 })
+
+// Job-level env is evaluated before runner context exists. Keep runner paths
+// in a run step or step-level with, where GitHub permits those variables.
+test('runner temporary paths are resolved only after the job reaches a runner', () => {
+  const jobEnv = workflow.match(/^    env:\n([\s\S]*?)^    steps:/m)?.[1]
+  assert.ok(jobEnv)
+  assert.doesNotMatch(jobEnv, /runner\./)
+  assert.match(workflow, /\$RUNNER_TEMP/)
+  assert.match(workflow, />> "\$GITHUB_ENV"/)
+  assert.match(workflow, /path: \$\{\{ runner\.temp \}\}\/production-acceptance/)
+})

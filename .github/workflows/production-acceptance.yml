@@ -24,13 +24,15 @@ jobs:
     timeout-minutes: 30
     env:
       ACCEPTANCE_REVISION: ${{ inputs.expected_revision }}
-      ACCEPTANCE_OUTPUT_DIR: ${{ runner.temp }}/production-acceptance-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - name: Require a manual run from main
         shell: bash
         run: |
           test "$GITHUB_EVENT_NAME" = workflow_dispatch
           test "$GITHUB_REF" = refs/heads/main
+      - name: Set the run-local output path on the runner
+        shell: bash
+        run: printf 'ACCEPTANCE_OUTPUT_DIR=%s/production-acceptance-%s-%s\n' "$RUNNER_TEMP" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
       - uses: actions/checkout@v7
         id: checkout
         with:
@@ -68,6 +70,6 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: production-acceptance-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ env.ACCEPTANCE_OUTPUT_DIR }}/
+          path: ${{ runner.temp }}/production-acceptance-${{ github.run_id }}-${{ github.run_attempt }}/
           if-no-files-found: warn
           retention-days: 30
