@@ -17,6 +17,23 @@ npm run test:e2e
 
 Trong CI, Playwright chạy 1 worker để tăng tính ổn định. Báo cáo HTML được upload thành artifact khi job E2E chạy.
 
+Trong pipeline phát hành, E2E và visual dùng cùng release candidate do Node 22 tạo,
+không tự build lại. `ROCKET_PUBLIC_ROOT` của [server kiểm thử](../scripts/serve-local.mjs)
+trỏ vào thư mục artifact đã giải nén ngoài checkout. Hash trước/sau và biên nhận hai
+lane được kiểm bởi [`site_artifact.py`](../scripts/site_artifact.py). Node 24 vẫn giữ
+qualification riêng; xem [quy trình phát hành artifact](DEPLOYMENT.md).
+
+Kiểm các điều kiện từ chối archive/provenance bằng Python tiêu chuẩn:
+
+```bash
+python3 -m unittest discover -s tests -p 'site_artifact_test.py' -v
+```
+
+Dữ liệu hỏng trong test chỉ dùng trong thư mục tạm. Không chạy các ca phá hỏng với
+artifact production hoặc dữ liệu người dùng. Báo cáo browser không được thay thế
+cho biên nhận xác nhận byte candidate không đổi.
+
+
 ## Kiểm thử song ngữ
 
 - `npm run check:localization` kiểm contract VI/EN, tiêu đề chính, `html[lang]`, persistence hook và các controller động.

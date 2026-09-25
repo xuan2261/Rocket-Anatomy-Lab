@@ -38,7 +38,7 @@ const check = f => qualifyPages({ get: f.get, context: f.context })
 test('a successful trusted CI approves only its exact SHA/run/attempt', async () => {
   const f = fixture(); const result = await check(f)
   assert.equal(result.sha, SHA); assert.equal(result.ciRunId, 200); assert.equal(result.ciRunAttempt, 1)
-  assert.equal(result.jobs.length, 5)
+  assert.equal(result.jobs.length, REQUIRED_JOBS.length)
   assert.equal(f.calls.filter(x => x === '/git/ref/heads/main').length, 2)
   assert.equal(f.calls.filter(x => x === '/actions/runs/200').length, 2)
 })
@@ -169,8 +169,8 @@ test('Pages is triggered only by completed main CI or gated manual invocation', 
   assert.match(block('gate'), /node scripts\/check-pages-ci\.mjs/)
 })
 test('both deployment boundaries run the exact same fail-closed checker', () => {
-  assert.match(block('build'), /needs: gate/)
-  assert.match(block('deploy'), /needs: \[gate, build\]/)
+  assert.match(block('promote'), /needs: gate/)
+  assert.match(block('deploy'), /needs: \[gate, promote\]/)
   assert.match(block('deploy'), /EXPECTED_CI_RUN_ID:/)
   assert.match(block('deploy'), /EXPECTED_CI_RUN_ATTEMPT:/)
   assert.match(block('deploy'), /node scripts\/check-pages-ci\.mjs[\s\S]*uses: actions\/deploy-pages@v5/)
@@ -178,13 +178,13 @@ test('both deployment boundaries run the exact same fail-closed checker', () => 
 })
 test('write privileges are restricted to the deploy job and all checkouts are pinned', () => {
   assert.doesNotMatch(pages.split('jobs:')[0], /:\s*write\b/)
-  assert.doesNotMatch(block('gate') + block('build') + block('smoke'), /:\s*write\b/)
+  assert.doesNotMatch(block('gate') + block('promote') + block('smoke'), /:\s*write\b/)
   assert.match(block('deploy'), /pages: write/); assert.match(block('deploy'), /id-token: write/)
-  for (const id of ['gate', 'build', 'deploy', 'smoke']) {
+  for (const id of ['gate', 'promote', 'deploy', 'smoke']) {
     assert.match(block(id), /persist-credentials: false/)
     assert.match(block(id), /ref: \$\{\{ (github.sha|needs\.(gate|deploy)\.outputs\.sha) \}\}/)
   }
   assert.match(pages, /cancel-in-progress: false/)
-  assert.match(block('build'), /name: github-pages-\$\{\{ needs.gate.outputs.sha \}\}/)
+  assert.match(block('promote'), /name: github-pages-\$\{\{ needs.gate.outputs.sha \}\}/)
   assert.match(block('deploy'), /artifact_name: github-pages-\$\{\{ needs.gate.outputs.sha \}\}/)
 })

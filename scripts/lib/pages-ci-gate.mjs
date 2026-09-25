@@ -2,7 +2,7 @@ const REPOSITORY = 'xuan2261/Rocket-Anatomy-Lab'
 const CI_PATH = '.github/workflows/ci.yml'
 export const REQUIRED_JOBS = Object.freeze([
   'Workflow lint (actionlint)', 'Build + unit/integration (22)', 'Build + unit/integration (24)',
-  'E2E + accessibility Chromium', 'Visual regression',
+  'E2E + accessibility Chromium', 'Visual regression', 'Publish tested artifact',
 ])
 const positiveInteger = value => Number.isSafeInteger(value) && value > 0
 const requireThat = (condition, reason) => { if (!condition) throw new Error(reason) }

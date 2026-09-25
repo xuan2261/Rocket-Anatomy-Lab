@@ -3,7 +3,10 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'public')
+const root = process.env.ROCKET_PUBLIC_ROOT
+  ? fs.realpathSync(process.env.ROCKET_PUBLIC_ROOT)
+  : path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'public')
+if (!fs.statSync(root).isDirectory()) throw new Error('Invalid public root')
 const port = Number(process.env.PORT || process.argv[2] || 4174)
 const mime = new Map([
   ['.html', 'text/html; charset=utf-8'],
@@ -33,6 +36,7 @@ const server = http.createServer((request, response) => {
 })
 
 server.listen(port, '127.0.0.1', () => {
+  console.log(`Serving static files from: ${root}`)
   console.log(`Rocket Anatomy Lab: http://127.0.0.1:${port}`)
   console.log('Press Ctrl+C to stop.')
 })

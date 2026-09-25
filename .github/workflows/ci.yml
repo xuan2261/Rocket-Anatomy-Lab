@@ -44,6 +44,22 @@ jobs:
           cache-dependency-path: package.json
       - run: npm install --no-fund --no-audit
       - run: npm run verify:ci
+      - name: Test release-payload safeguards
+        run: python3 -m unittest discover -s tests -p 'site_artifact_test.py' -v
+      - name: Package the Node 22 release candidate exactly once
+        if: matrix.node == 22
+        env:
+          SITE_PACKAGE_DIR: ${{ runner.temp }}/site-candidate
+        run: python3 scripts/site_artifact.py pack
+      - name: Upload immutable release candidate
+        if: matrix.node == 22
+        uses: actions/upload-artifact@v7
+        with:
+          name: site-candidate-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/site-candidate/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
 
   e2e:
     name: E2E + accessibility Chromium
@@ -59,8 +75,28 @@ jobs:
           cache-dependency-path: package.json
       - run: npm install --no-fund --no-audit
       - run: npx playwright install --with-deps chromium
-      - run: npm run verify:ci
+      - name: Select outside-source artifact and test directories
+        run: |
+          printf 'SITE_PACKAGE_DIR=%s/site-candidate\nROCKET_PUBLIC_ROOT=%s/site-under-test\nSITE_PROOF_DIR=%s/site-proof\n' "$RUNNER_TEMP" "$RUNNER_TEMP" "$RUNNER_TEMP" >> "$GITHUB_ENV"
+          mkdir "$RUNNER_TEMP/site-proof"
+      - name: Download this CI attempt's exact candidate
+        uses: actions/download-artifact@v8
+        with:
+          name: site-candidate-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/site-candidate/
+          digest-mismatch: error
+      - name: Validate and extract the candidate without rebuilding
+        run: python3 scripts/site_artifact.py restore
       - run: npm run test:e2e
+      - name: Verify served bytes did not change during the browser tests
+        run: python3 scripts/site_artifact.py proof e2e
+      - name: Upload successful byte-bound test receipt
+        uses: actions/upload-artifact@v7
+        with:
+          name: site-proof-e2e-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/site-proof/e2e.json
+          if-no-files-found: error
+          retention-days: 14
       - name: Tải báo cáo Playwright
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
@@ -84,12 +120,68 @@ jobs:
           cache-dependency-path: package.json
       - run: npm install --no-fund --no-audit
       - run: npx playwright install --with-deps chromium
-      - run: npm run verify:ci
+      - name: Select outside-source artifact and test directories
+        run: |
+          printf 'SITE_PACKAGE_DIR=%s/site-candidate\nROCKET_PUBLIC_ROOT=%s/site-under-test\nSITE_PROOF_DIR=%s/site-proof\n' "$RUNNER_TEMP" "$RUNNER_TEMP" "$RUNNER_TEMP" >> "$GITHUB_ENV"
+          mkdir "$RUNNER_TEMP/site-proof"
+      - name: Download this CI attempt's exact candidate
+        uses: actions/download-artifact@v8
+        with:
+          name: site-candidate-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/site-candidate/
+          digest-mismatch: error
+      - name: Validate and extract the candidate without rebuilding
+        run: python3 scripts/site_artifact.py restore
       - run: npm run test:visual
+      - name: Verify served bytes did not change during the browser tests
+        run: python3 scripts/site_artifact.py proof visual
+      - name: Upload successful byte-bound test receipt
+        uses: actions/upload-artifact@v7
+        with:
+          name: site-proof-visual-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/site-proof/visual.json
+          if-no-files-found: error
+          retention-days: 14
       - name: Upload visual Playwright report
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
           name: visual-playwright-report
           path: playwright-report/
+          retention-days: 14
+
+
+  publish:
+    name: Publish tested artifact
+    needs: [verify, e2e, visual]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v8
+        with:
+          name: site-candidate-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/site-candidate/
+          digest-mismatch: error
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: site-proof-*-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/site-proof/
+          merge-multiple: true
+          digest-mismatch: error
+      - name: Bind both passing test receipts to the unchanged candidate
+        env:
+          SITE_PACKAGE_DIR: ${{ runner.temp }}/site-candidate
+          SITE_PROOF_DIR: ${{ runner.temp }}/site-proof
+          SITE_TESTED_DIR: ${{ runner.temp }}/tested-site
+        run: python3 scripts/site_artifact.py certify
+      - name: Publish only the fully tested immutable bundle
+        uses: actions/upload-artifact@v7
+        with:
+          name: tested-site-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/tested-site/
+          if-no-files-found: error
+          compression-level: 0
           retention-days: 14

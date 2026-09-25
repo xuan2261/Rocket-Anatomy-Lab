@@ -25,7 +25,9 @@ test('Pages and manual production acceptance lint before installing application 
     const lint = yaml.indexOf('run: bash scripts/lint-workflows.sh')
     assert.ok(lint >= 0, `${file} needs an actionlint step`)
     assert.ok(lint < yaml.indexOf('uses: actions/setup-node@'), `${file}: lint precedes Node setup`)
-    assert.ok(lint < yaml.indexOf('run: npm install'), `${file}: lint precedes install`)
+    const install = yaml.indexOf('run: npm install')
+    if (install !== -1) assert.ok(lint < install, `${file}: lint precedes install`)
+    else assert.equal(file, 'pages.yml', 'only payload-promotion Pages can omit installation')
     assert.doesNotMatch(yaml.slice(0, lint), /continue-on-error:/)
   }
 })

@@ -35,24 +35,29 @@ jobs:
       sha: ${{ steps.ci.outputs.sha }}
       ci_run_id: ${{ steps.ci.outputs.ci_run_id }}
       ci_run_attempt: ${{ steps.ci.outputs.ci_run_attempt }}
+      site_artifact_id: ${{ steps.ci.outputs.site_artifact_id }}
     steps:
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
-      - name: Validate trusted CI and current main before build
+      - name: Validate trusted CI, current main and the tested artifact identity
         id: ci
         env:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/check-pages-ci.mjs
 
-  build:
+  promote:
+    name: Promote tested payload (no rebuild)
     needs: gate
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
     permissions:
       contents: read
-      pages: read
+      actions: read
+    outputs:
+      tar_sha256: ${{ steps.payload.outputs.tar_sha256 }}
+      pages_artifact_id: ${{ steps.upload.outputs.artifact-id }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -60,21 +65,37 @@ jobs:
           persist-credentials: false
       - name: Lint GitHub Actions workflows
         run: bash scripts/lint-workflows.sh
-      - uses: actions/setup-node@v7
+      - name: Download by immutable artifact ID from the admitted CI run
+        uses: actions/download-artifact@v8
         with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: package.json
-      - run: npm install --no-fund --no-audit
-      - run: npm run verify:ci
-      - uses: actions/configure-pages@v6
-      - uses: actions/upload-pages-artifact@v5
+          merge-multiple: true
+          artifact-ids: ${{ needs.gate.outputs.site_artifact_id }}
+          github-token: ${{ github.token }}
+          run-id: ${{ needs.gate.outputs.ci_run_id }}
+          path: ${{ runner.temp }}/tested-site/
+          digest-mismatch: error
+      - name: Verify provenance, complete file manifest and both test receipts
+        id: payload
+        env:
+          SITE_PACKAGE_DIR: ${{ runner.temp }}/tested-site
+          SITE_SHA: ${{ needs.gate.outputs.sha }}
+          SITE_RUN_ID: ${{ needs.gate.outputs.ci_run_id }}
+          SITE_RUN_ATTEMPT: ${{ needs.gate.outputs.ci_run_attempt }}
+        run: python3 scripts/site_artifact.py verify
+      # deploy-pages resolves artifacts in this workflow. Forward the tar bytes
+      # verbatim; do not use upload-pages-artifact, which would create a new tar.
+      - name: Forward the identical tar for the Pages transport
+        id: upload
+        uses: actions/upload-artifact@v7
         with:
-          name: github-pages-${{ needs.gate.outputs.sha }}
-          path: public
+          name: github-pages-${{ needs.gate.outputs.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/tested-site/artifact.tar
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
 
   deploy:
-    needs: [gate, build]
+    needs: [gate, promote]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -88,35 +109,68 @@ jobs:
     outputs:
       sha: ${{ needs.gate.outputs.sha }}
       page_url: ${{ steps.deployment.outputs.page_url }}
+      site_artifact_id: ${{ needs.gate.outputs.site_artifact_id }}
+      ci_run_id: ${{ needs.gate.outputs.ci_run_id }}
+      ci_run_attempt: ${{ needs.gate.outputs.ci_run_attempt }}
     steps:
       - uses: actions/checkout@v7
         with:
           ref: ${{ needs.gate.outputs.sha }}
           persist-credentials: false
-      - name: Recheck CI and main immediately before deployment
+      - name: Download the exact forwarded Pages transport by ID
+        uses: actions/download-artifact@v8
+        with:
+          merge-multiple: true
+          artifact-ids: ${{ needs.promote.outputs.pages_artifact_id }}
+          path: ${{ runner.temp }}/pages-payload/
+          digest-mismatch: error
+      - name: Recheck the payload checksum immediately before deployment
+        env:
+          SITE_PACKAGE_DIR: ${{ runner.temp }}/pages-payload
+          SITE_TAR_SHA256: ${{ needs.promote.outputs.tar_sha256 }}
+        run: python3 scripts/site_artifact.py hash
+      - name: Recheck CI, main and source artifact identity before deployment
         env:
           GH_TOKEN: ${{ github.token }}
           EXPECTED_CI_RUN_ID: ${{ needs.gate.outputs.ci_run_id }}
           EXPECTED_CI_RUN_ATTEMPT: ${{ needs.gate.outputs.ci_run_attempt }}
+          EXPECTED_SITE_ARTIFACT_ID: ${{ needs.gate.outputs.site_artifact_id }}
         run: node scripts/check-pages-ci.mjs
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v5
         with:
-          artifact_name: github-pages-${{ needs.gate.outputs.sha }}
+          artifact_name: github-pages-${{ needs.gate.outputs.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
 
   smoke:
     name: Smoke deployed Pages
     needs: deploy
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     permissions:
       contents: read
+      actions: read
     steps:
       - uses: actions/checkout@v7
         with:
           ref: ${{ needs.deploy.outputs.sha }}
           persist-credentials: false
+      - uses: actions/download-artifact@v8
+        with:
+          merge-multiple: true
+          artifact-ids: ${{ needs.deploy.outputs.site_artifact_id }}
+          github-token: ${{ github.token }}
+          run-id: ${{ needs.deploy.outputs.ci_run_id }}
+          path: ${{ runner.temp }}/tested-site/
+          digest-mismatch: error
+      - name: Compare every deployed static file with the tested manifest
+        env:
+          SITE_PACKAGE_DIR: ${{ runner.temp }}/tested-site
+          SITE_SHA: ${{ needs.deploy.outputs.sha }}
+          SITE_RUN_ID: ${{ needs.deploy.outputs.ci_run_id }}
+          SITE_RUN_ATTEMPT: ${{ needs.deploy.outputs.ci_run_attempt }}
+          SITE_LIVE_REPORT: ${{ runner.temp }}/deployed-byte-check.json
+        run: python3 scripts/site_artifact.py live
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -124,3 +178,11 @@ jobs:
         env:
           SMOKE_URL: ${{ needs.deploy.outputs.page_url }}
         run: npm run smoke:deployed
+      - name: Retain deployed-byte evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: deployed-byte-check-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/deployed-byte-check.json
+          if-no-files-found: error
+          retention-days: 14
