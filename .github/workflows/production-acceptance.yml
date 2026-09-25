@@ -39,6 +39,8 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
+      - name: Lint GitHub Actions workflows
+        run: bash scripts/lint-workflows.sh
       - uses: actions/setup-node@v7
         with:
           node-version: 22

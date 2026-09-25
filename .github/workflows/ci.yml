@@ -14,8 +14,22 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  workflow-lint:
+    name: Workflow lint (actionlint)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Validate workflows and regression fixtures
+        run: bash scripts/lint-workflows.sh
+
   verify:
     name: Build + unit/integration
+    needs: workflow-lint
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:

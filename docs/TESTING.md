@@ -87,3 +87,30 @@ các mục riêng chưa xác minh. Không suy diễn `axe` không có violations
 Các điều kiện từ chối và bảo vệ đầu ra nằm trong
 [`tests/production-acceptance.test.mjs`](../tests/production-acceptance.test.mjs).
 Cách kích hoạt được đối chiếu với [hướng dẫn GitHub về workflow thủ công](https://docs.github.com/actions/managing-workflow-runs/manually-running-a-workflow).
+
+## Kiểm tra cấu hình GitHub Actions trước build
+
+Lỗi workflow cần được phát hiện trước khi tải dependency hoặc khởi chạy trình duyệt.
+[`scripts/lint-workflows.sh`](../scripts/lint-workflows.sh) là điểm chạy chung của
+CI, Pages và nghiệm thu production; CI chặn các job phía sau bằng `needs`.
+Chạy cùng phép kiểm trên Linux x86_64 với Bash, Node.js, curl, tar và sha256sum:
+
+```bash
+bash scripts/lint-workflows.sh
+```
+
+Installer ghim phiên bản và SHA-256 của bản phát hành chính thức, chỉ giải nén
+sau khi checksum đúng, rồi xóa thư mục tạm kể cả khi thất bại. Lỗi tải công cụ
+không được coi là lint thành công. Không cần cài các package của ứng dụng.
+
+Phạm vi là kiểm tra tích hợp sẵn của [actionlint](https://github.com/rhysd/actionlint):
+YAML, schema Actions, expression, context, permission và phụ thuộc job. Các tích hợp
+ShellCheck/Pyflakes không thuộc gate này. Lint không thay thế chạy CI thật, kiểm
+quyền tài khoản, hay nghiệm thu thiết bị. Workflow sai cú pháp nghiêm trọng vẫn có
+thể bị GitHub từ chối trước khi job chạy; kiểm local trước khi push giúp tránh điều đó.
+
+[`scripts/check-actionlint-fixtures.mjs`](../scripts/check-actionlint-fixtures.mjs)
+chạy chính binary với các mẫu hợp lệ và lỗi hồi quy;
+[`tests/workflow-lint.test.mjs`](../tests/workflow-lint.test.mjs) giữ hợp đồng chặn job
+và từ chối download lỗi. Bằng chứng các lần chạy nằm ở log của job, không tự tạo
+branch hoặc commit kết quả vào repository.

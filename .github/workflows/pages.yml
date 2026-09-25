@@ -20,6 +20,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
+      - name: Lint GitHub Actions workflows
+        run: bash scripts/lint-workflows.sh
       - uses: actions/setup-node@v7
         with:
           node-version: 22
