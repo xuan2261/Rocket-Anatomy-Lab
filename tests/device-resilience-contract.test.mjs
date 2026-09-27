@@ -17,6 +17,7 @@ test('release-gated E2E owns WebGL recovery, reduced motion, orientation and pin
     assert.ok(e2e.includes(token), token)
   }
   assert.match(helper, /WEBGL_lose_context/)
+  assert.match(helper, /setTimeout\(resolve, 0\)/)
   assert.match(helper, /Input\.dispatchTouchEvent/)
   assert.match(helper, /page\.setViewportSize/)
 })

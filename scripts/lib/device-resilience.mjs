@@ -39,6 +39,11 @@ export async function exerciseWebglContextRecovery(page, selector = '#viewport')
     const lostEvent = await lostPromise
     const lostState = gl.isContextLost()
 
+    // WEBGL_lose_context is not restorable until the webglcontextlost event
+    // task has fully completed. Promise continuations are microtasks, so cross
+    // one macrotask boundary before requesting restoration.
+    await new Promise(resolve => setTimeout(resolve, 0))
+
     const restoredPromise = waitForEvent('webglcontextrestored')
     extension.restoreContext()
     const restoredEvent = await restoredPromise
