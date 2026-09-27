@@ -97,8 +97,9 @@ trong `docs/acceptance/` được giữ nguyên; không ghi đè nó khi kiểm 
 Workflow nghiệm thu không commit, push, tạo branch, triển khai Pages hoặc phát hành.
 
 Kết quả PASS chỉ áp dụng cho bộ tự động được ghi trong artifact. Mobile là giả lập
-Chromium; nghiệm thu thiết bị vật lý, pinch, GPU/driver và công nghệ hỗ trợ vẫn là
-các mục riêng chưa xác minh. Không suy diễn `axe` không có violations thành việc
+Chromium; nghiệm thu thiết bị vật lý vẫn là mục riêng chưa xác minh. Bộ tự động nay có portrait/landscape resize,
+multi-touch pinch và WebGL context loss/recovery trên Chromium, nhưng Android/iOS thật,
+GPU/driver thật và TalkBack/VoiceOver vẫn **NOT YET VERIFIED** cho tới khi có bằng chứng. Không suy diễn `axe` không có violations thành việc
 đã đạt toàn bộ accessibility, đặc biệt khi còn mục `incomplete`.
 
 Các điều kiện từ chối và bảo vệ đầu ra nằm trong
@@ -131,3 +132,26 @@ chạy chính binary với các mẫu hợp lệ và lỗi hồi quy;
 [`tests/workflow-lint.test.mjs`](../tests/workflow-lint.test.mjs) giữ hợp đồng chặn job
 và từ chối download lỗi. Bằng chứng các lần chạy nằm ở log của job, không tự tạo
 branch hoặc commit kết quả vào repository.
+
+
+## Device resilience và nghiệm thu thiết bị vật lý
+
+Gate release tự động có một spec riêng:
+
+```bash
+npm run test:device-resilience
+```
+
+[`e2e/device-resilience.spec.mjs`](../e2e/device-resilience.spec.mjs) chạy trên
+hai project Playwright hiện hữu. Nó kiểm `prefers-reduced-motion`, mất/khôi phục
+WebGL bằng `WEBGL_lose_context`, tiếp tục tương tác sau restore và — riêng mobile
+Chromium — đổi viewport portrait/landscape cùng pinch multi-touch. Các ca này nằm trong
+`npm run test:e2e`, vì vậy chúng chạy trên đúng release candidate đã được đóng gói
+cho CI chứ không phải một build khác.
+
+Nghiệm thu production live cũng chạy một case `resilience` cho từng profile/locale và
+ghi kết quả vào artifact của workflow. Điều này tăng coverage browser nhưng **không**
+đổi trạng thái thiết bị thật. Checklist và hợp đồng bằng chứng nằm tại
+[`PHYSICAL_DEVICE_ACCEPTANCE.md`](PHYSICAL_DEVICE_ACCEPTANCE.md). Chỉ khi checklist có
+bằng chứng Android/iOS thật, GPU/driver và assistive technology tương ứng mới được nâng
+từ `NOT YET VERIFIED` sang `EXECUTION PASS`.

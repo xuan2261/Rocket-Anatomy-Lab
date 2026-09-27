@@ -58,7 +58,7 @@ test('harness keeps its real browser matrix, fingerprints and non-release scope'
   assert.match(script, /prepareAcceptance\(\)/)
   assert.match(script, /fingerprint\(files, 'before'\)/)
   assert.match(script, /fingerprint\(files, 'after'\)/)
-  assert.match(script, /expectedCases: 28/)
+  assert.match(script, /expectedCases: 32/)
   assert.match(script, /expect\(result.requestsFailed/)
   assert.match(script, /physicalDevices: 'NOT YET VERIFIED'/)
   assert.match(script, /stableRelease: 'NOT AUTHORIZED BY THIS HARNESS'/)
