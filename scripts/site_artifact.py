@@ -24,7 +24,14 @@ LIVE = 'https://xuan2261.github.io/Rocket-Anatomy-Lab/'
 MAX_BYTES = 512 * 1024 * 1024
 MAX_FILES = 10000
 REQUIRED = {'index.html', 'bootstrap.mjs', 'core/engine.js', 'assets/saturn-v-education.glb'}
-LANES = {'e2e', 'visual'}
+LANES = {
+    'e2e',
+    'visual',
+    'desktop-firefox',
+    'desktop-webkit',
+    'android-chromium',
+    'iphone-webkit',
+}
 
 
 def require(condition, message):
@@ -253,7 +260,8 @@ def write_proof(bundle, target, output, identity, lane):
 
 
 def validate_proofs(proofs, manifest, identity):
-    require(isinstance(proofs, list) and len(proofs) == 2 and all(isinstance(p, dict) for p in proofs), 'Missing test receipts')
+    require(isinstance(proofs, list) and len(proofs) == len(LANES)
+            and all(isinstance(p, dict) for p in proofs), 'Missing test receipts')
     require({p.get('lane') for p in proofs} == LANES, 'Missing or duplicate browser lane')
     for proof in proofs:
         match_identity(proof, identity)
@@ -264,7 +272,8 @@ def validate_proofs(proofs, manifest, identity):
 def certify(bundle, proofdir, destination, identity):
     manifest = verify_bundle(bundle, identity)
     proofdir = pathlib.Path(proofdir)
-    require({p.name for p in proofdir.iterdir()} == {'e2e.json', 'visual.json'}, 'Missing or unexpected test evidence')
+    expected = {lane + '.json' for lane in LANES}
+    require({p.name for p in proofdir.iterdir()} == expected, 'Missing or unexpected test evidence')
     proofs = [load_json(proofdir / (lane + '.json')) for lane in sorted(LANES)]
     validate_proofs(proofs, manifest, identity)
     dest = fresh_directory(destination)
