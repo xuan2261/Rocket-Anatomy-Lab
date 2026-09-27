@@ -76,6 +76,26 @@ jobs** để tạo một tập bằng chứng đầy đủ; không ghép candida
 biên nhận mới. Nếu artifact đã hết hạn/xóa hoặc thiếu bằng chứng, chạy lại CI;
 Pages không được build lại hoặc tìm một artifact gần giống để thay thế.
 
+## Provenance ký số của release payload
+
+Sau khi E2E và visual cùng PASS, job `Publish tested artifact` dùng
+[`actions/attest@v4`](https://github.com/actions/attest) để tạo SLSA provenance
+cho chính `artifact.tar` đã kiểm. Chỉ CI `push` trên `main` mới ký; PR và topic
+branch không được coi là release provenance.
+
+CI tự xác minh attestation trước khi run có thể xanh. Pages xác minh lại tar sau khi
+tải bundle đã kiểm và thêm một lần nữa trên tar transport ngay trước deploy. Policy
+ghim repository, signer workflow `.github/workflows/ci.yml`, source ref `main`,
+source commit SHA, predicate SLSA v1 và từ chối self-hosted signer. Thất bại xác minh
+là fail-closed; checksum/manifest không thay thế chữ ký, và chữ ký không thay thế
+E2E/visual hay đối chiếu byte live.
+
+Attestation bundle do GitHub tạo được lưu 14 ngày như bằng chứng offline. Verification
+online sử dụng `gh attestation verify`; xem
+[hướng dẫn GitHub](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/use-artifact-attestations).
+Attestation chứng minh provenance và integrity binding, không tự chứng minh phần mềm
+an toàn hay thay thế chính sách phát hành.
+
 Smoke đối chiếu mọi tệp tĩnh trong manifest với byte nhận từ trang live, sau đó kiểm
 app shell. Phép đối chiếu này không bao gồm byte của các CDN bên ngoài được trang
 tham chiếu, không thay thế nghiệm thu thiết bị, và không khóa mọi thay đổi có thể
