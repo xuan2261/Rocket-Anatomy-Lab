@@ -31,6 +31,10 @@ test('CI gates artifact publication on every device-matrix lane and exact-candid
   assert.match(workflow, /fail-fast: false/)
   assert.match(workflow, /needs: \[verify, e2e, visual, device-matrix\]/)
   assert.match(workflow, /Download this CI attempt's exact candidate/)
+  assert.match(workflow, /xvfb-run -a npm run test:device-matrix/)
+  assert.match(workflow, /LIBGL_ALWAYS_SOFTWARE=1/)
+  assert.match(config, /headless: false/)
+  assert.match(config, /webgl\.force-enabled/)
   assert.match(workflow, /site_artifact\.py proof "\$\{\{ matrix\.lane \}\}"/)
   for (const lane of lanes) {
     assert.ok(workflow.includes('lane: ' + lane), lane)

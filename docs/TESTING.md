@@ -164,7 +164,7 @@ trước khi job `Publish tested artifact` được chạy:
 
 | Lane | Runner | Playwright engine / profile | Phạm vi |
 | --- | --- | --- | --- |
-| `desktop-firefox` | Ubuntu 24.04 | Desktop Firefox | WebGL load, reduced motion, mode switching, overflow |
+| `desktop-firefox` | Ubuntu 24.04 | Desktop Firefox headed qua Xvfb + Mesa software GL | WebGL load, reduced motion, mode switching, overflow |
 | `desktop-webkit` | macOS 15 | Desktop Safari profile trên Playwright WebKit | cùng contract cross-browser trên macOS |
 | `android-chromium` | Ubuntu 24.04 | Pixel 7 / Chromium emulation | touch, portrait/landscape, WebGL, mode switching |
 | `iphone-webkit` | macOS 15 | iPhone 13 / WebKit emulation | touch, portrait/landscape, WebGL, mode switching |
@@ -183,3 +183,8 @@ xác minh byte tree không đổi rồi phát hành một receipt riêng. Certif
 **Giới hạn:** Playwright WebKit không phải branded Safari; Pixel/iPhone profiles là
 emulation (UA, viewport, touch và related browser parameters), không phải điện thoại vật
 lý. Vì vậy matrix này là automated preflight và không thay thế checklist thiết bị thật.
+
+
+Firefox lane chạy headed dưới `xvfb-run` trên Linux CI và ép Mesa software GL để
+kiểm Three.js/WebGL path trên GitHub-hosted VM không có GPU vật lý. Đây vẫn là software
+rendering preflight; muốn kiểm GPU/driver thật phải dùng runner/device có GPU thật.

@@ -28,6 +28,7 @@ export default defineConfig({
       name: 'desktop-firefox',
       use: {
         ...devices['Desktop Firefox'],
+        headless: false,
         launchOptions: {
           firefoxUserPrefs: {
             'webgl.force-enabled': true,
