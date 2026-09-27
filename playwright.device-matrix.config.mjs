@@ -24,7 +24,18 @@ export default defineConfig({
     timeout: 20_000,
   },
   projects: [
-    { name: 'desktop-firefox', use: { ...devices['Desktop Firefox'] } },
+    {
+      name: 'desktop-firefox',
+      use: {
+        ...devices['Desktop Firefox'],
+        launchOptions: {
+          firefoxUserPrefs: {
+            'webgl.force-enabled': true,
+            'webgl.forbid-software': false,
+          },
+        },
+      },
+    },
     { name: 'desktop-webkit', use: { ...devices['Desktop Safari'] } },
     { name: 'android-pixel7-chromium', use: { ...devices['Pixel 7'] } },
     { name: 'iphone13-webkit', use: { ...devices['iPhone 13'] } },
