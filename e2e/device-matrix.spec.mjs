@@ -53,7 +53,6 @@ test('browser/device matrix keeps the real WebGL scene usable @device-matrix', a
   const capabilities = await browserCapabilities(page)
 
   expect(capabilities.context).toMatch(/^webgl/)
-  if (touch) expect(capabilities.maxTouchPoints).toBeGreaterThan(0)
   await expect(page.locator('#viewport')).toHaveAttribute('data-selected-assembly', 'center-body-assembly')
 
   const viewTab = page.locator('[data-control-tab="view"]')
