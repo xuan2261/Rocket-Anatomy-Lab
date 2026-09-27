@@ -6,6 +6,12 @@ import { createHash } from 'node:crypto'
 import { chromium, devices, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { prepareAcceptance } from './lib/acceptance-config.mjs'
+import {
+  assertReducedMotion,
+  exercisePinchZoom,
+  exerciseViewportOrientation,
+  exerciseWebglContextRecovery,
+} from './lib/device-resilience.mjs'
 
 // Read-only acceptance of the deployed app. No local server, request mocks,
 // application-state injection, baseline updates, or release operation.
@@ -22,7 +28,12 @@ const report = {
   environment: { platform: os.platform(), release: os.release(), node: process.version },
   fingerprints: [], cases: [], infrastructureErrors: [],
   physicalDevices: 'NOT YET VERIFIED', stableRelease: 'NOT AUTHORIZED BY THIS HARNESS',
-  limitations: ['Mobile is Chromium Pixel 7 emulation, not a physical Android device.', 'No physical iOS, GPU/driver, pinch gesture or assistive-technology sign-off.', 'Screenshots are unmasked observations; no new golden snapshots are accepted.'],
+  limitations: [
+    'Mobile resilience uses Chromium Pixel 7 emulation; viewport rotation and multi-touch pinch are synthetic browser inputs, not physical-device evidence.',
+    'WebGL loss/recovery uses WEBGL_lose_context in Chromium; it does not reproduce every OS, browser or GPU-driver reset.',
+    'No physical Android/iOS, GPU/driver or assistive-technology sign-off.',
+    'Screenshots are unmasked observations; no new golden snapshots are accepted.',
+  ],
 }
 
 function sourceFiles() {
@@ -254,6 +265,27 @@ try {
           await shot('live')
         })
       }
+
+      await runCase(profile, language, 'resilience', async ({ page, act, panel, shot, result }) => {
+        await load(page, language, 'center-body-assembly')
+        result.reducedMotion = await assertReducedMotion(page)
+        result.webglContext = await exerciseWebglContextRecovery(page)
+
+        await panel('view')
+        await act(page.locator('[data-mode="ghost"]'))
+        await expect(page.locator('#viewport')).toHaveAttribute('data-view-mode', 'ghost')
+        await act(page.locator('[data-mode="normal"]'))
+        await expect(page.locator('#viewport')).toHaveAttribute('data-view-mode', 'normal')
+
+        if (profile.mobile) {
+          result.orientation = await exerciseViewportOrientation(page)
+          result.pinch = await exercisePinchZoom(page)
+        }
+
+        await expect(page.locator('#viewport')).toHaveAttribute('data-selected-assembly', 'center-body-assembly')
+        await checkNoDocumentOverflow(page)
+        await shot('resilience')
+      })
     }
   }
   await fingerprint(files, 'after')
@@ -264,8 +296,8 @@ try {
   if (browser) await browser.close()
   report.finishedAt = new Date().toISOString()
   const failed = report.cases.filter(item => item.status !== 'PASS')
-  report.totals = { expectedCases: 28, executed: report.cases.length, passed: report.cases.filter(item => item.status === 'PASS').length, failed: failed.length }
-  report.status = !report.infrastructureErrors.length && !failed.length && report.cases.length === 28 ? 'PASS' : 'FAIL'
+  report.totals = { expectedCases: 32, executed: report.cases.length, passed: report.cases.filter(item => item.status === 'PASS').length, failed: failed.length }
+  report.status = !report.infrastructureErrors.length && !failed.length && report.cases.length === 32 ? 'PASS' : 'FAIL'
   fs.writeFileSync(path.join(OUTPUT, 'results.json'), JSON.stringify(report, null, 2))
   const lines = [
     '# Production browser acceptance', '', `Result: **${report.status}**`, '',
