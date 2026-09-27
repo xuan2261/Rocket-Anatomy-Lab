@@ -150,13 +150,13 @@ class SiteArtifactTests(unittest.TestCase):
     def make_proofs(self):
         self.pack()
         proofdir = self.root / 'proofs'; proofdir.mkdir()
-        for lane in ['e2e', 'visual']:
+        for lane in sorted(a.LANES):
             target = self.root / lane
             a.restore(self.bundle, target, self.identity)
             a.write_proof(self.bundle, target, proofdir / (lane + '.json'), self.identity, lane)
         return proofdir
 
-    def test_tested_bundle_requires_both_lanes_and_preserves_tar_bytes(self):
+    def test_tested_bundle_requires_all_release_lanes_and_preserves_tar_bytes(self):
         proofdir = self.make_proofs()
         dest = self.root / 'tested'
         a.certify(self.bundle, proofdir, dest, self.identity)

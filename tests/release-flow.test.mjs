@@ -37,7 +37,7 @@ test('browser lanes serve and verify the same downloaded payload without rebuild
 
 test('tested artifact publication depends on both byte-bound browser receipts and all qualification jobs', () => {
   const text = job(ci, 'publish')
-  assert.match(text, /needs: \[verify, e2e, visual\]/)
+  assert.match(text, /needs: \[verify, e2e, visual, device-matrix\]/)
   assert.match(text, /site-proof-\*/)
   assert.match(text, /site_artifact\.py certify[\s\S]*tested-site-/)
   assert.doesNotMatch(text, /always\(\)|continue-on-error|overwrite: true/)

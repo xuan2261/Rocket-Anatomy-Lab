@@ -106,6 +106,93 @@ jobs:
           retention-days: 14
 
 
+  device-matrix:
+    name: Device matrix (${{ matrix.label }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    needs: verify
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: Firefox desktop / Ubuntu
+            lane: desktop-firefox
+            project: desktop-firefox
+            browser: firefox
+            os: ubuntu-24.04
+          - label: WebKit desktop / macOS
+            lane: desktop-webkit
+            project: desktop-webkit
+            browser: webkit
+            os: macos-15
+          - label: Pixel 7 / Chromium
+            lane: android-chromium
+            project: android-pixel7-chromium
+            browser: chromium
+            os: ubuntu-24.04
+          - label: iPhone 13 / WebKit / macOS
+            lane: iphone-webkit
+            project: iphone13-webkit
+            browser: webkit
+            os: macos-15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package.json
+      - run: npm install --no-fund --no-audit
+      - name: Install the selected Playwright browser
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            npx playwright install --with-deps "${{ matrix.browser }}"
+          else
+            npx playwright install "${{ matrix.browser }}"
+          fi
+      - name: Select outside-source artifact and test directories
+        shell: bash
+        run: |
+          printf 'SITE_PACKAGE_DIR=%s/site-candidate\nROCKET_PUBLIC_ROOT=%s/site-under-test\nSITE_PROOF_DIR=%s/site-proof\nDEVICE_MATRIX_LANE=%s\n' "$RUNNER_TEMP" "$RUNNER_TEMP" "$RUNNER_TEMP" "${{ matrix.lane }}" >> "$GITHUB_ENV"
+          mkdir "$RUNNER_TEMP/site-proof"
+      - name: Download this CI attempt's exact candidate
+        uses: actions/download-artifact@v8
+        with:
+          name: site-candidate-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/site-candidate/
+          digest-mismatch: error
+      - name: Validate and extract the candidate without rebuilding
+        run: python3 scripts/site_artifact.py restore
+      - name: Run the selected browser/device project
+        shell: bash
+        run: |
+          if [[ "${{ matrix.browser }}" == "firefox" ]]; then
+            LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a npm run test:device-matrix -- --project="${{ matrix.project }}"
+          else
+            npm run test:device-matrix -- --project="${{ matrix.project }}"
+          fi
+      - name: Verify served bytes did not change during the device test
+        run: python3 scripts/site_artifact.py proof "${{ matrix.lane }}"
+      - name: Upload successful device-matrix receipt
+        uses: actions/upload-artifact@v7
+        with:
+          name: site-proof-${{ matrix.lane }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/site-proof/${{ matrix.lane }}.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload device-matrix Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-${{ matrix.lane }}
+          path: playwright-report-device-matrix/
+          if-no-files-found: warn
+          retention-days: 14
+
+
   visual:
     name: Visual regression
     runs-on: ubuntu-24.04
@@ -153,7 +240,7 @@ jobs:
 
   publish:
     name: Publish tested artifact
-    needs: [verify, e2e, visual]
+    needs: [verify, e2e, visual, device-matrix]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
@@ -175,7 +262,7 @@ jobs:
           path: ${{ runner.temp }}/site-proof/
           merge-multiple: true
           digest-mismatch: error
-      - name: Bind both passing test receipts to the unchanged candidate
+      - name: Bind all passing browser/device receipts to the unchanged candidate
         env:
           SITE_PACKAGE_DIR: ${{ runner.temp }}/site-candidate
           SITE_PROOF_DIR: ${{ runner.temp }}/site-proof

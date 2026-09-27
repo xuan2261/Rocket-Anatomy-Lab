@@ -15,7 +15,8 @@ test('CI actionlint gate must pass before build, E2E and visual jobs', () => {
   assert.match(job(ci, 'workflow-lint'), /contents: read/)
   assert.match(job(ci, 'workflow-lint'), /persist-credentials: false/)
   assert.match(job(ci, 'verify'), /needs: workflow-lint/)
-  for (const name of ['e2e', 'visual']) assert.match(job(ci, name), /needs: verify/)
+  for (const name of ['e2e', 'visual', 'device-matrix']) assert.match(job(ci, name), /needs: verify/)
+  assert.match(job(ci, 'publish'), /needs: \[verify, e2e, visual, device-matrix\]/)
   assert.doesNotMatch(job(ci, 'workflow-lint'), /continue-on-error:|always\(\)|:\s*write\b/)
 })
 

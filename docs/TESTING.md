@@ -155,3 +155,36 @@ ghi kết quả vào artifact của workflow. Điều này tăng coverage browse
 [`PHYSICAL_DEVICE_ACCEPTANCE.md`](PHYSICAL_DEVICE_ACCEPTANCE.md). Chỉ khi checklist có
 bằng chứng Android/iOS thật, GPU/driver và assistive technology tương ứng mới được nâng
 từ `NOT YET VERIFIED` sang `EXECUTION PASS`.
+
+
+## Cross-browser device matrix trong CI
+
+Ngoài full E2E Chromium hiện hữu, release candidate còn phải qua một matrix chuyên biệt
+trước khi job `Publish tested artifact` được chạy:
+
+| Lane | Runner | Playwright engine / profile | Phạm vi |
+| --- | --- | --- | --- |
+| `desktop-firefox` | Ubuntu 24.04 | Desktop Firefox headed qua Xvfb + Mesa software GL | WebGL load, reduced motion, mode switching, overflow |
+| `desktop-webkit` | macOS 15 | Desktop Safari profile trên Playwright WebKit | cùng contract cross-browser trên macOS |
+| `android-chromium` | Ubuntu 24.04 | Pixel 7 / Chromium emulation | touch, portrait/landscape, WebGL, mode switching |
+| `iphone-webkit` | macOS 15 | iPhone 13 / WebKit emulation | touch, portrait/landscape, WebGL, mode switching |
+
+Chạy toàn bộ matrix local khi đã cài đủ browser:
+
+```bash
+npm run test:device-matrix
+```
+
+CI không rebuild ứng dụng cho các lane này. Mỗi matrix job tải đúng
+`site-candidate-<sha>-<run>-<attempt>`, giải nén ngoài source tree, chạy browser test,
+xác minh byte tree không đổi rồi phát hành một receipt riêng. Certification cuối yêu cầu
+đủ `e2e`, `visual` và bốn device-matrix receipts trước khi ký provenance.
+
+**Giới hạn:** Playwright WebKit không phải branded Safari; Pixel/iPhone profiles là
+emulation (UA, viewport, touch và related browser parameters), không phải điện thoại vật
+lý. Vì vậy matrix này là automated preflight và không thay thế checklist thiết bị thật.
+
+
+Firefox lane chạy headed dưới `xvfb-run` trên Linux CI và ép Mesa software GL để
+kiểm Three.js/WebGL path trên GitHub-hosted VM không có GPU vật lý. Đây vẫn là software
+rendering preflight; muốn kiểm GPU/driver thật phải dùng runner/device có GPU thật.

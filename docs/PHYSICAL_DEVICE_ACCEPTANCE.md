@@ -2,6 +2,11 @@
 
 Status: **NOT YET VERIFIED**
 
+CI cross-browser/device preflight hiện tự động chạy Firefox desktop, WebKit trên macOS,
+Pixel 7/Chromium emulation và iPhone 13/WebKit emulation trên đúng release candidate.
+Các lane này tăng khả năng bắt regression engine/touch/responsive nhưng **không phải**
+bằng chứng Android/iOS/Safari/GPU hoặc assistive technology trên thiết bị vật lý.
+
 Tài liệu này là gate bằng chứng cho phần mà Chromium emulation/CI không thể chứng minh.
 Không nâng trạng thái lên `EXECUTION PASS` chỉ vì Playwright, axe hoặc workflow
 production browser acceptance đã xanh.
