@@ -98,6 +98,19 @@ jobs:
           cache: npm
           cache-dependency-path: package.json
       - run: npm install --no-fund --no-audit
+      - name: Pin BrowserStack-compatible Playwright client
+        run: |
+          npm install --no-fund --no-audit --no-save --package-lock=false \
+            @playwright/test@1.59.1 playwright@1.59.1 browserstack-node-sdk@1.71.2
+          [[ "$(node -p "require('./node_modules/@playwright/test/package.json').version")" == "1.59.1" ]] || {
+            echo "::error::Unexpected @playwright/test version"; exit 1;
+          }
+          [[ "$(node -p "require('./node_modules/playwright/package.json').version")" == "1.59.1" ]] || {
+            echo "::error::Unexpected playwright version"; exit 1;
+          }
+          [[ "$(node -p "require('./node_modules/browserstack-node-sdk/package.json').version")" == "1.71.2" ]] || {
+            echo "::error::Unexpected BrowserStack SDK version"; exit 1;
+          }
       - name: Verify committed real-device harness
         run: |
           node --check playwright.real-device.config.mjs
@@ -107,7 +120,7 @@ jobs:
         run: |
           node -e 'const fs=require("fs"); fs.writeFileSync("real-device-metadata.json", JSON.stringify({schema:1,revision:process.env.EXPECTED_REVISION,liveUrl:process.env.REAL_DEVICE_BASE_URL,provider:"BrowserStack",runId:process.env.GITHUB_RUN_ID,runAttempt:process.env.GITHUB_RUN_ATTEMPT}, null, 2)+"\n")'
       - name: Run Playwright on BrowserStack real devices
-        run: npx --yes browserstack-node-sdk@1.71.2 playwright test --config=playwright.real-device.config.mjs
+        run: npx --no-install browserstack-node-sdk playwright test --config=playwright.real-device.config.mjs
       - name: Upload real-device evidence
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7

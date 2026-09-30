@@ -199,8 +199,11 @@ thật bị khóa bởi repository variable `REAL_DEVICE_CI_ENABLED`; chỉ khi 
 `BROWSERSTACK_ACCESS_KEY`.
 
 Workflow khóa run vào đúng Pages SHA/current `main`, dùng URL production công khai nên
-không mở BrowserStack Local tunnel, rồi chạy BrowserStack Node SDK phiên bản pin
-`1.71.2` trên Samsung Galaxy S25 Ultra / Android 15 Chrome và iPhone 15 Pro Max /
+không mở BrowserStack Local tunnel. Repo vẫn dùng Playwright `1.63.0` cho CI nội bộ,
+nhưng real-device job cài tạm `@playwright/test@1.59.1` + `playwright@1.59.1`
+vì đây là nhánh BrowserStack hiện liệt kê hỗ trợ đồng thời Android và iOS; source
+dependency của repo không bị hạ phiên bản. BrowserStack Node SDK được pin `1.71.2`.
+Thiết bị mục tiêu là Samsung Galaxy S25 Ultra / Android 15 Chrome và iPhone 15 Pro Max /
 iOS 17 Safari. Evidence JSON được giữ 30 ngày.
 
 Trạng thái `skipped` vì chưa bật `REAL_DEVICE_CI_ENABLED` **không phải** real-device
