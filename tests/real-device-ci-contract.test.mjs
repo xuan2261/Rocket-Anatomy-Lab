@@ -5,6 +5,7 @@ import fs from 'node:fs'
 const read = name => fs.readFileSync(new URL('../' + name, import.meta.url), 'utf8')
 const workflow = read('.github/workflows/real-device.yml')
 const bstack = read('browserstack.yml')
+const coreConfig = read('playwright.config.mjs')
 const config = read('playwright.real-device.config.mjs')
 const spec = read('e2e/real-device.spec.mjs')
 const physical = read('docs/PHYSICAL_DEVICE_ACCEPTANCE.md')
@@ -32,6 +33,11 @@ test('BrowserStack config requests real Android Chrome and real iOS Safari witho
   assert.match(bstack, /browserStackLocal: false/)
   assert.doesNotMatch(bstack, /^userName:|^accessKey:/m)
   assert.doesNotMatch(bstack, /YOUR_USERNAME|YOUR_ACCESS_KEY/)
+})
+
+test('core Playwright suite excludes the real-device-only spec', () => {
+  assert.match(coreConfig, /testIgnore: 'real-device\.spec\.mjs'/)
+  assert.match(config, /testMatch: 'real-device\.spec\.mjs'/)
 })
 
 test('real-device test binds to live Pages and proves WebGL plus touch interaction without claiming screen-reader coverage', () => {
