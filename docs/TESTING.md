@@ -188,3 +188,22 @@ lý. Vì vậy matrix này là automated preflight và không thay thế checkli
 Firefox lane chạy headed dưới `xvfb-run` trên Linux CI và ép Mesa software GL để
 kiểm Three.js/WebGL path trên GitHub-hosted VM không có GPU vật lý. Đây vẫn là software
 rendering preflight; muốn kiểm GPU/driver thật phải dùng runner/device có GPU thật.
+
+
+## Real-device BrowserStack CI
+
+Workflow [`.github/workflows/real-device.yml`](../.github/workflows/real-device.yml)
+được kích hoạt sau khi Pages deploy thành công hoặc chạy thủ công. Mặc định job thiết bị
+thật bị khóa bởi repository variable `REAL_DEVICE_CI_ENABLED`; chỉ khi biến bằng
+`true` workflow mới yêu cầu hai GitHub Actions secrets `BROWSERSTACK_USERNAME` và
+`BROWSERSTACK_ACCESS_KEY`.
+
+Workflow khóa run vào đúng Pages SHA/current `main`, dùng URL production công khai nên
+không mở BrowserStack Local tunnel, rồi chạy BrowserStack Node SDK phiên bản pin
+`1.71.2` trên Samsung Galaxy S25 Ultra / Android 15 Chrome và iPhone 15 Pro Max /
+iOS 17 Safari. Evidence JSON được giữ 30 ngày.
+
+Trạng thái `skipped` vì chưa bật `REAL_DEVICE_CI_ENABLED` **không phải** real-device
+PASS. Khi bật mà thiếu secret, workflow fail ngay. Test hiện tự động xác minh Three.js
+WebGL, layout overflow và touch/tap cho mode controls. Pinch, TalkBack/VoiceOver và
+GPU/driver coverage sâu hơn vẫn theo checklist nghiệm thu vật lý.

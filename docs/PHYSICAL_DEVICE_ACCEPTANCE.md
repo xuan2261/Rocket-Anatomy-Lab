@@ -2,6 +2,11 @@
 
 Status: **NOT YET VERIFIED**
 
+Real-device BrowserStack CI đã có scaffold fail-closed trong repo nhưng chỉ được nâng
+trạng thái sau khi `REAL_DEVICE_CI_ENABLED=true`, hai BrowserStack secrets tồn tại và
+một workflow run thật gắn với deployed revision PASS. Job bị skip vì chưa cấu hình
+credential không phải là bằng chứng thiết bị thật.
+
 CI cross-browser/device preflight hiện tự động chạy Firefox desktop, WebKit trên macOS,
 Pixel 7/Chromium emulation và iPhone 13/WebKit emulation trên đúng release candidate.
 Các lane này tăng khả năng bắt regression engine/touch/responsive nhưng **không phải**

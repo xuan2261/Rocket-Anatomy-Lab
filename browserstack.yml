@@ -1,0 +1,23 @@
+# Credentials are intentionally not stored here.
+# browserstack-node-sdk reads BROWSERSTACK_USERNAME and BROWSERSTACK_ACCESS_KEY
+# from the workflow environment.
+projectName: Rocket-Anatomy-Lab
+buildName: real-device
+buildIdentifier: '#${BUILD_NUMBER}'
+
+platforms:
+  - browserName: chrome
+    osVersion: "15.0"
+    deviceName: Samsung Galaxy S25 Ultra
+    deviceOrientation: portrait
+  - browserName: safari
+    osVersion: "17"
+    deviceName: iPhone 15 Pro Max
+
+parallelsPerPlatform: 1
+browserStackLocal: false
+framework: playwright
+source: rocket-anatomy-lab-real-device:v1
+debug: false
+networkLogs: false
+testObservability: false

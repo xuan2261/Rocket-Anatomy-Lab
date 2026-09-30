@@ -1,0 +1,121 @@
+name: Real device CI (BrowserStack)
+
+on:
+  workflow_run:
+    workflows: ["Deploy GitHub Pages"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      expected_revision:
+        description: "Optional full main SHA to bind this real-device run to"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: real-device-${{ github.event.workflow_run.head_sha || inputs.expected_revision || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  preflight:
+    name: Real-device gate
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      enabled: ${{ steps.gate.outputs.enabled }}
+      expected_sha: ${{ steps.revision.outputs.sha }}
+    steps:
+      - name: Resolve enable gate
+        id: gate
+        env:
+          REAL_DEVICE_CI_ENABLED: ${{ vars.REAL_DEVICE_CI_ENABLED }}
+        run: |
+          if [[ "$REAL_DEVICE_CI_ENABLED" == "true" ]]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "Real-device CI is enabled."
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Real-device CI is disabled. Set repository variable REAL_DEVICE_CI_ENABLED=true after adding BrowserStack secrets."
+          fi
+      - name: Bind the run to one deployed revision
+        id: revision
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PAGES_SHA: ${{ github.event.workflow_run.head_sha }}
+          INPUT_SHA: ${{ inputs.expected_revision }}
+          DISPATCH_SHA: ${{ github.sha }}
+        run: |
+          if [[ "$EVENT_NAME" == "workflow_run" ]]; then
+            expected="$PAGES_SHA"
+          elif [[ -n "$INPUT_SHA" ]]; then
+            expected="$INPUT_SHA"
+          else
+            expected="$DISPATCH_SHA"
+          fi
+          [[ "$expected" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::Expected revision must be a full commit SHA"; exit 1; }
+          echo "sha=$expected" >> "$GITHUB_OUTPUT"
+
+  real-device:
+    name: BrowserStack real Android + iOS
+    needs: preflight
+    if: needs.preflight.outputs.enabled == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USERNAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+      REAL_DEVICE_BASE_URL: https://xuan2261.github.io/Rocket-Anatomy-Lab/
+      EXPECTED_REVISION: ${{ needs.preflight.outputs.expected_sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.preflight.outputs.expected_sha }}
+          persist-credentials: false
+      - name: Require current main to equal the deployed Pages revision
+        run: |
+          current_main="$(git ls-remote origin refs/heads/main | cut -f1)"
+          [[ "$current_main" == "$EXPECTED_REVISION" ]] || {
+            echo "::error::Main moved after the deployed revision; refusing stale real-device qualification."
+            exit 1
+          }
+          [[ "$(git rev-parse HEAD)" == "$EXPECTED_REVISION" ]] || {
+            echo "::error::Checkout does not match expected revision."
+            exit 1
+          }
+      - name: Require BrowserStack credentials without printing them
+        run: |
+          [[ -n "$BROWSERSTACK_USERNAME" ]] || { echo "::error::Missing BROWSERSTACK_USERNAME secret"; exit 1; }
+          [[ -n "$BROWSERSTACK_ACCESS_KEY" ]] || { echo "::error::Missing BROWSERSTACK_ACCESS_KEY secret"; exit 1; }
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package.json
+      - run: npm install --no-fund --no-audit
+      - name: Verify committed real-device harness
+        run: |
+          node --check playwright.real-device.config.mjs
+          node --check e2e/real-device.spec.mjs
+          node --test tests/real-device-ci-contract.test.mjs
+      - name: Record revision-bound run metadata
+        run: |
+          node -e 'const fs=require("fs"); fs.writeFileSync("real-device-metadata.json", JSON.stringify({schema:1,revision:process.env.EXPECTED_REVISION,liveUrl:process.env.REAL_DEVICE_BASE_URL,provider:"BrowserStack",runId:process.env.GITHUB_RUN_ID,runAttempt:process.env.GITHUB_RUN_ATTEMPT}, null, 2)+"\n")'
+      - name: Run Playwright on BrowserStack real devices
+        run: npx --yes browserstack-node-sdk@1.71.2 playwright test --config=playwright.real-device.config.mjs
+      - name: Upload real-device evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: real-device-evidence-${{ needs.preflight.outputs.expected_sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            real-device-results.json
+            real-device-metadata.json
+            test-results/
+          if-no-files-found: warn
+          retention-days: 30
