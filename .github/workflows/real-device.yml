@@ -118,7 +118,31 @@ jobs:
           node --test tests/real-device-ci-contract.test.mjs
       - name: Record revision-bound run metadata
         run: |
-          node -e 'const fs=require("fs"); fs.writeFileSync("real-device-metadata.json", JSON.stringify({schema:1,revision:process.env.EXPECTED_REVISION,liveUrl:process.env.REAL_DEVICE_BASE_URL,provider:"BrowserStack",runId:process.env.GITHUB_RUN_ID,runAttempt:process.env.GITHUB_RUN_ATTEMPT}, null, 2)+"\n")'
+          node - <<'NODE'
+          const crypto = require('crypto')
+          const fs = require('fs')
+          const hash = path => crypto.createHash('sha256').update(fs.readFileSync(path)).digest('hex')
+          const version = path => JSON.parse(fs.readFileSync(path, 'utf8')).version
+          const metadata = {
+            schema: 2,
+            revision: process.env.EXPECTED_REVISION,
+            liveUrl: process.env.REAL_DEVICE_BASE_URL,
+            provider: 'BrowserStack',
+            runId: process.env.GITHUB_RUN_ID,
+            runAttempt: process.env.GITHUB_RUN_ATTEMPT,
+            clients: {
+              playwright: version('node_modules/playwright/package.json'),
+              playwrightTest: version('node_modules/@playwright/test/package.json'),
+              browserstackNodeSdk: version('node_modules/browserstack-node-sdk/package.json'),
+            },
+            harnessSha256: {
+              browserstack: hash('browserstack.yml'),
+              playwrightConfig: hash('playwright.real-device.config.mjs'),
+              spec: hash('e2e/real-device.spec.mjs'),
+            },
+          }
+          fs.writeFileSync('real-device-metadata.json', JSON.stringify(metadata, null, 2) + '\n')
+          NODE
       - name: Run Playwright on BrowserStack real devices
         run: npx --no-install browserstack-node-sdk playwright test --config=playwright.real-device.config.mjs
       - name: Upload real-device evidence
@@ -130,5 +154,5 @@ jobs:
             real-device-results.json
             real-device-metadata.json
             test-results/
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 30
