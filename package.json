@@ -57,6 +57,6 @@
     "@playwright/test": "1.63.0",
     "typescript": "7.0.2",
     "@axe-core/playwright": "4.13.0",
-    "three": "0.186.0"
+    "three": "0.186.1"
   }
 }
